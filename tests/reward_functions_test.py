@@ -1,5 +1,7 @@
 import sys
-sys.path.insert(1, '/home/eliasschmied/predicting-inductive-biases-RL')
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#(to be able to import from the parent directory)
 import reward_functions
 
 from rl4lms.envs.text_generation.observation import Observation
