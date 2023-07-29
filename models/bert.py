@@ -2,7 +2,7 @@ from transformers import (
     BertForSequenceClassification,
     BertTokenizer,
 )
-from .base import BaseClassifier
+from base import BaseClassifier
 
 
 class BertClassifier(BaseClassifier):
