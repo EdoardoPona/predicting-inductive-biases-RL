@@ -12,7 +12,7 @@ from transformers import (
     T5Model,
     get_linear_schedule_with_warmup,
 )
-from .base import BaseClassifier
+from base import BaseClassifier
 
 
 class T5Classifier(BaseClassifier):
