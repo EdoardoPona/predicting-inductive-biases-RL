@@ -6,8 +6,8 @@ import numpy as np
 import torch.nn as nn
 from torch.optim import Adam
 
-import head
-from base import BaseClassifier
+from . import head
+from .base import BaseClassifier
 
 
 class LstmGloveClassifier(BaseClassifier):

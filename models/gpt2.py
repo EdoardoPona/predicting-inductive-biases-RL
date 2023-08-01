@@ -2,7 +2,7 @@ from transformers import (
     GPT2ForSequenceClassification,
     GPT2Tokenizer,
 )
-from base import BaseClassifier
+from .base import BaseClassifier
 
 
 class GPT2Classifier(BaseClassifier):

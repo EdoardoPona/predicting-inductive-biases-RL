@@ -3,7 +3,7 @@ from transformers import (
     RobertaForSequenceClassification,
 )
 
-from base import BaseClassifier
+from .base import BaseClassifier
 
 
 class RobertaClassifier(BaseClassifier):
