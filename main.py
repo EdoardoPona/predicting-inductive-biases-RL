@@ -15,7 +15,7 @@ from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks.callback import Callback
 
-from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, toy_transformer
+from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy
 
 
 @plac.opt(
@@ -296,7 +296,7 @@ def load_model(model, num_steps):
     if "lstm-toy" in model:
         return lstm_toy.LstmToyClassifier(model)
     if "toy-transformer" in model:
-        return toy_transformer.TransformerToy(model)
+        return transformer_toy.TransformerToy(model)
 
     assert f"model `{model}` not found."
 
