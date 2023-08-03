@@ -22,10 +22,7 @@ props=(gap-base-length
 
 # rates=(0.0 0.001 0.01 0.05 0.1 0.2 0.5)
 probes=(strong
-        weak
-        n/a
-        strong_direct
-        msgs)
+        weak)
 
 
 models=(gpt2)
