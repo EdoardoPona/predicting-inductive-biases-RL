@@ -31,8 +31,8 @@ probing = pd.read_table("files/probing.tsv")
 results.columns
 
 toys = ['toy_1', 'toy_2', 'toy_3', 'toy_4', 'toy_5']
-results = results[(results['model'] == 'lstm-toy') & (results['prop'].isin(toys))]
-#results = results[(results['model'] == 'toy-transformer') & (results['prop'].isin(toys))]
+#results = results[(results['model'] == 'lstm-toy') & (results['prop'].isin(toys))]
+results = results[(results['model'] == 'toy-transformer') & (results['prop'].isin(toys))]
 #%%
 
 
