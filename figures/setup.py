@@ -50,6 +50,7 @@ def collect_probing_accuracy() -> pd.DataFrame:
             "roberta-base",
             "bert-base-uncased",
             "lstm-toy",
+            "toy-transformer",
             "rebert",
             "gpt2",
             "lstm-glove",

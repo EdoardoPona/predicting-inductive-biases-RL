@@ -47,6 +47,7 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "toy_3",
         "toy_4",
         "toy_5",
+        "toy_6",
     ],
 )
 @plac.opt(
@@ -100,6 +101,7 @@ def main(
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
     print(f"Using: {accelerator}.")
     batch_size = 128
+    #batch_size = 1024
     accumulate_grad_batches = 1
 
     if "t5" in model:
@@ -108,12 +110,13 @@ def main(
         accumulate_grad_batches = 2
 
     if "gpt" in model:
-        batch_size = 32
+        batch_size = 32 # modified to run on RTX 3070 Ti
 
     # Lower the following to (1, 0.1, 0.1) to speed up debugging.
     if "toy" in prop:
         # toy props has more data - less epochs needed.
         num_epochs = 10
+        #num_epochs = 200
     else:
         # NOTE(Fall 2022): Originally did 50 epochs;
         # This could probably be reduced and/or early stopping added.

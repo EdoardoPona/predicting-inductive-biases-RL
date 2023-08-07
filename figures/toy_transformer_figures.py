@@ -47,7 +47,7 @@ errors = [
 	'both-error'
 ]
 
-fig, axs = plt.subplots(1, 4, figsize=(25, 5))
+fig, axs = plt.subplots(1, 4, figsize=(15, 3))
 axs = axs.flatten()
 for error, ax in zip(errors, axs):
 	for i, p in enumerate(results.groupby('prop')):
@@ -68,11 +68,12 @@ for error, ax in zip(errors, axs):
 		ax.set_xscale('symlog', linthresh=0.001)
 		ax.set_xticks([0.001, 0.01, 0.05, 0.1, 0.2, 0.5])
 		#ax.set_xlim(0.001, 1)
-		ax.set_ylim(-0.05, 1)
+		ax.set_ylim(-0.05, 1.05)
 		ax.legend()
 plt.show()
 
-plt.savefig(f"figures/test.pdf", transparent=True)
+plt.savefig(f"figures/tt_lineplot.pdf", transparent=True)
+plt.savefig(f"figures/tt_lineplot.png")
 plt.close()
 # %%
 
