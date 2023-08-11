@@ -3,7 +3,6 @@ from gym import spaces
 import transformers
 from transformers import GPT2Config
 from transformers import AutoModelForCausalLM
-from rl4lms.envs.text_generation.observation import Observation
 from rl4lms.envs.text_generation.policy.causal_policy import CausalLMActorCriticPolicy
 
 
@@ -16,21 +15,16 @@ def config():
         hidden_size=256,
     )
 
-
 def test_loading_custom_config_model(config):
-
     # NOTE this test is only checking that we can create a policy from a custom config
-    # TODO we should probably save the config directly 
+    config.save_pretrained('test_model')     # save config 
+
     model = AutoModelForCausalLM.from_config(config)
-    model.config
     assert type(model) == transformers.models.gpt2.modeling_gpt2.GPT2LMHeadModel, \
         "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
-    model.save_pretrained('test_model')
-
 
     observation_space = spaces.Dict({"position": spaces.Discrete(2), "velocity": spaces.Discrete(3)})
     action_space = spaces.Discrete(3)
-
     policy = CausalLMActorCriticPolicy(
         model_name='test_model',
         observation_space=observation_space,
