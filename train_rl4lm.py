@@ -8,6 +8,8 @@ from rl4lms.envs.text_generation.training_utils import (
     OnPolicyTrainer,
     SupervisedTrainer,
 )
+import transformers
+from transformers import AutoModelForCausalLM
 
 RL_CONFIG = """
 tokenizer:
@@ -100,6 +102,10 @@ def main(
 
 
 def make_model_config(path):
+    ''' for use in RL4LMs, we need to save the model such that it 
+    can be loaded by AutoModel.from_pretrained. 
+    This means we need to instantiate a model, and call .save_pretrained
+    rather than saving the config directly '''
     from transformers import GPT2Config
 
     config = GPT2Config(
@@ -107,9 +113,16 @@ def make_model_config(path):
         n_head=4,
         n_layer=2,
         hidden_size=128,
+        n_positions=100,  # upper bound on max length of input
     )
-    config.save_pretrained(path)     
-
+    model = AutoModelForCausalLM.from_config(
+      config
+    )
+    assert type(model) == transformers.models.gpt2.modeling_gpt2.GPT2LMHeadModel, \
+        "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
+    print('created model', model)
+    model.save_pretrained(path)     
+    
 
 def make_tokenizer_config(path):
     from transformers import GPT2Tokenizer 
@@ -122,13 +135,16 @@ def make_train_config(model_path, train_config_path):
     with open(train_config_path, 'w') as f:
         f.write(rl_config)
 
-
-    pass
-
 if __name__ == "__main__":
     model_path = 'test_model'
     make_model_config(model_path)
     make_tokenizer_config(model_path)
+
+    from transformers import AutoModelForCausalLM
+    model = AutoModelForCausalLM.from_pretrained(model_path)
+    print(type(model))
+    print(model.num_parameters())
+
 
     train_config_path = 'tests/rl_config.yaml'
     make_train_config(model_path, train_config_path)
