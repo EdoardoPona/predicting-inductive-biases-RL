@@ -1,3 +1,5 @@
+# NOT USED. this is reimplemented in RL4LMs.
+
 from typing import Dict, Any
 
 from rl4lms.envs.text_generation.observation import Observation
