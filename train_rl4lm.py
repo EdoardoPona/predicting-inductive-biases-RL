@@ -103,7 +103,7 @@ def make_model_config(path, vocab_size, model_max_length):
         activation_function='gelu_new',
         n_head=4,
         n_layer=2,
-        # n_ctx = 32,
+        n_ctx=2*model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
         hidden_size=128,
         n_positions=model_max_length,  # upper bound on max length of input
         vocab_size=vocab_size, 
@@ -115,19 +115,25 @@ def make_model_config(path, vocab_size, model_max_length):
     print('created model', model)
     
 
-def make_tokenizer_config(path, vocab_size=50000, model_max_length=100):
+def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
     vocab = {f"{n}": n for n in range(vocab_size)}
+    vocab['[PAD]'] = vocab_size-2
+    vocab['[UNK]'] = vocab_size-1
 
     # NOTE: our data should never give UNK tokens 
     tokenizer = Tokenizer(
         models.WordLevel(
             vocab=vocab,
+            unk_token='[UNK]',
         )
     )
     pretrained_tokenizer = PreTrainedTokenizerFast(
         tokenizer_object=tokenizer,
         model_max_length=model_max_length,
     )
+    pretrained_tokenizer.add_special_tokens({
+        'pad_token': '[PAD]'
+    })
     pretrained_tokenizer.save_pretrained(path) 
 
 
@@ -138,8 +144,8 @@ def make_train_config(model_path, train_config_path):
 
 if __name__ == "__main__":
     model_path = 'tests/test_model'
-    vocab_size = 50000
-    model_max_length = 100
+    vocab_size = 50002
+    model_max_length = 10
     make_model_config(model_path, vocab_size, model_max_length)
     make_tokenizer_config(model_path, vocab_size, model_max_length)
 
