@@ -1,19 +1,14 @@
-import os
-from argparse import ArgumentParser
-
 import yaml
 
 from rl4lms.envs.text_generation.logging_utils import Tracker
 from rl4lms.envs.text_generation.training_utils import (
     OnPolicyTrainer,
-    SupervisedTrainer,
 )
-import transformers
 from transformers import AutoModelForCausalLM
 
 RL_CONFIG = """
 tokenizer:
-  model_name: test_model 
+  model_name: {model_path} 
   padding_side: left
   truncation_side: left
   pad_token_as_eos_token: True
@@ -46,7 +41,7 @@ alg:
   policy:
     id: causal_lm_actor_critic_policy
     args:
-      model_name: random_gpt2
+      model_name: {model_path} 
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
@@ -105,45 +100,31 @@ def make_model_config(path):
         activation_function='gelu_new',
         n_head=4,
         n_layer=2,
-        n_ctx = 32,
+        # n_ctx = 32,
         hidden_size=128,
-        n_positions=32,  # upper bound on max length of input
-        vocab_size = 50000
+        n_positions=100,  # upper bound on max length of input
+        # vocab_size = 50000    # TODO uncomment this when we have custom tokenizer 
     )
-    
-    import torch.nn as nn
-
-    class RandomGPT2(GPT2LMHeadModel):
-        def _init_weights(self, module):
-            if isinstance(module, (nn.Linear, nn.Embedding, nn.LayerNorm)):
-                module.weight.data.normal_(mean=0.0, std=0.02)
-                if isinstance(module, (nn.Linear, nn.LayerNorm)) and module.bias is not None:
-                    module.bias.data.zero_()
-            elif isinstance(module, nn.MultiheadAttention):
-                module.in_proj_weight.data.normal_(mean=0.0, std=0.02)
-
-
-    model = RandomGPT2(config)
-    model.save_pretrained('random_gpt2')
-
-    # print(f"model is {model}")
-
-    
-    # assert type(model) == transformers.models.gpt2.modeling_gpt2.GPT2LMHeadModel, \
-    #     "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
+    model = AutoModelForCausalLM.from_config(config)
+    assert type(model) == GPT2LMHeadModel, \
+        "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
+    model.save_pretrained(path)
     print('created model', model)
-    model.save_pretrained(path)     
+    
 
 def make_tokenizer_config(path):
   from tokenizers import Tokenizer, models
-  number_tokenizer = Tokenizer(models.WordLevel(unk_token="[UNK]"))
-  n = 50000
-  new_tokens = [' ']
-  for x in range(n):
-      new_tokens.append(str(x))
+  from transformers import GPT2Tokenizer
+  # number_tokenizer = Tokenizer(models.WordLevel(unk_token="[UNK]"))
+  # n = 50000
+  # new_tokens = [' ']
+  # for x in range(n):
+  #     new_tokens.append(str(x))
 
-  number_tokenizer.add_tokens(new_tokens)
-  number_tokenizer.save(path)
+  # number_tokenizer.add_tokens(new_tokens)
+  # number_tokenizer.save(path)
+  tokenizer = GPT2Tokenizer.from_pretrained('gpt2')  
+  tokenizer.save_pretrained(path)
 
 
 def make_train_config(model_path, train_config_path):
@@ -152,9 +133,10 @@ def make_train_config(model_path, train_config_path):
         f.write(rl_config)
 
 if __name__ == "__main__":
-    model_path = 'test_model'
+    model_path = 'tests/test_model'
     make_model_config(model_path)
-    make_tokenizer_config(model_path + "/tokenizer_config.json")
+    # make_tokenizer_config(model_path + "/tokenizer_config.json")
+    make_tokenizer_config(model_path)
 
     from transformers import AutoModelForCausalLM
     model = AutoModelForCausalLM.from_pretrained(model_path)
@@ -163,14 +145,13 @@ if __name__ == "__main__":
     print(f"{model.num_parameters()=}")
 
 
-
     train_config_path = 'tests/rl_config_copy.yaml'
     make_train_config(model_path, train_config_path)
 
     main(
         config_path=train_config_path,
         project_name='rl4lms',
-        experiment_name='test_experiment3',
+        experiment_name='test_experiment',
         base_path_to_store_results='tests/results',
         entity_name='test_user',
         log_to_wandb=False,
