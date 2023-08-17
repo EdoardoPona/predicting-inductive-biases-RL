@@ -116,9 +116,9 @@ def make_model_config(path, vocab_size, model_max_length):
     
 
 def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
-    vocab = {f"{n}": n for n in range(vocab_size)}
-    vocab['[PAD]'] = vocab_size-2
-    vocab['[UNK]'] = vocab_size-1
+    vocab = {f"{n}": n+2 for n in range(vocab_size)}
+    vocab['[PAD]'] = 0
+    vocab['[UNK]'] = 1
 
     # NOTE: our data should never give UNK tokens 
     tokenizer = Tokenizer(
@@ -132,9 +132,10 @@ def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
         model_max_length=model_max_length,
     )
     pretrained_tokenizer.add_special_tokens({
-        'pad_token': '[PAD]'
+        'pad_token': '[PAD]',
+        'unk_token': '[UNK]'
     })
-    pretrained_tokenizer.save_pretrained(path) 
+    pretrained_tokenizer.save_pretrained(path)
 
 
 def make_train_config(model_path, train_config_path):
