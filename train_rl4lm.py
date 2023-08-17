@@ -5,6 +5,10 @@ from rl4lms.envs.text_generation.training_utils import (
     OnPolicyTrainer,
 )
 from transformers import AutoModelForCausalLM
+from transformers import GPT2Config, GPT2LMHeadModel
+from tokenizers import Tokenizer, models
+from transformers import PreTrainedTokenizerFast
+
 
 RL_CONFIG = """
 tokenizer:
@@ -89,12 +93,11 @@ def main(
     trainer.train_and_eval()
 
 
-def make_model_config(path):
+def make_model_config(path, vocab_size, model_max_length):
     ''' for use in RL4LMs, we need to save the model such that it 
     can be loaded by AutoModel.from_pretrained. 
     This means we need to instantiate a model, and call .save_pretrained
     rather than saving the config directly '''
-    from transformers import GPT2Config, GPT2LMHeadModel
 
     config = GPT2Config(
         activation_function='gelu_new',
@@ -102,8 +105,8 @@ def make_model_config(path):
         n_layer=2,
         # n_ctx = 32,
         hidden_size=128,
-        n_positions=100,  # upper bound on max length of input
-        # vocab_size = 50000    # TODO uncomment this when we have custom tokenizer 
+        n_positions=model_max_length,  # upper bound on max length of input
+        vocab_size=vocab_size, 
     )
     model = AutoModelForCausalLM.from_config(config)
     assert type(model) == GPT2LMHeadModel, \
@@ -112,19 +115,20 @@ def make_model_config(path):
     print('created model', model)
     
 
-def make_tokenizer_config(path):
-  from tokenizers import Tokenizer, models
-  from transformers import GPT2Tokenizer
-  # number_tokenizer = Tokenizer(models.WordLevel(unk_token="[UNK]"))
-  # n = 50000
-  # new_tokens = [' ']
-  # for x in range(n):
-  #     new_tokens.append(str(x))
+def make_tokenizer_config(path, vocab_size=50000, model_max_length=100):
+    vocab = {f"{n}": n for n in range(vocab_size)}
 
-  # number_tokenizer.add_tokens(new_tokens)
-  # number_tokenizer.save(path)
-  tokenizer = GPT2Tokenizer.from_pretrained('gpt2')  
-  tokenizer.save_pretrained(path)
+    # NOTE: our data should never give UNK tokens 
+    tokenizer = Tokenizer(
+        models.WordLevel(
+            vocab=vocab,
+        )
+    )
+    pretrained_tokenizer = PreTrainedTokenizerFast(
+        tokenizer_object=tokenizer,
+        model_max_length=model_max_length,
+    )
+    pretrained_tokenizer.save_pretrained(path) 
 
 
 def make_train_config(model_path, train_config_path):
@@ -134,18 +138,19 @@ def make_train_config(model_path, train_config_path):
 
 if __name__ == "__main__":
     model_path = 'tests/test_model'
-    make_model_config(model_path)
-    # make_tokenizer_config(model_path + "/tokenizer_config.json")
-    make_tokenizer_config(model_path)
+    vocab_size = 50000
+    model_max_length = 100
+    make_model_config(model_path, vocab_size, model_max_length)
+    make_tokenizer_config(model_path, vocab_size, model_max_length)
 
-    from transformers import AutoModelForCausalLM
     model = AutoModelForCausalLM.from_pretrained(model_path)
+
     print(f"Actual model is {model}")
     print(f"{type(model)=}")
     print(f"{model.num_parameters()=}")
+    print(model.config)
 
-
-    train_config_path = 'tests/rl_config_copy.yaml'
+    train_config_path = 'tests/rl_config.yaml'
     make_train_config(model_path, train_config_path)
 
     main(
