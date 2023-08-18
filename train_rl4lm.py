@@ -26,7 +26,7 @@ datapool:
 env:
   n_envs: 10
   args:
-    max_prompt_length: 10
+    max_prompt_length: 11
     max_episode_length: 20
     terminate_on_eos: True
 
@@ -49,7 +49,7 @@ alg:
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
-        max_new_tokens: 3  #this must align with env's max steps
+        max_new_tokens: 1  #this must align with env's max steps
 
 train_evaluation:
   eval_batch_size: 256
@@ -145,8 +145,8 @@ def make_train_config(model_path, train_config_path):
 
 if __name__ == "__main__":
     model_path = 'tests/test_model'
-    vocab_size = 50002
-    model_max_length = 10
+    vocab_size = 12
+    model_max_length = 11
     make_model_config(model_path, vocab_size, model_max_length)
     make_tokenizer_config(model_path, vocab_size, model_max_length)
 
