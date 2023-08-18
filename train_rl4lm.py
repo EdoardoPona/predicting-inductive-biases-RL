@@ -24,22 +24,21 @@ datapool:
   id: toy_pool
       
 env:
-  n_envs: 10
+  n_envs: 100
   args:
     max_prompt_length: 10
-    max_episode_length: 1
+    max_episode_length: 5
     terminate_on_eos: False    
 
 alg:
   id: ppo
   args:
     n_steps: 1
-    batch_size: 250
-    verbose: 1
+    batch_size: 100
+    verbose: 0
     learning_rate: 0.000001
     n_epochs: 5
     ent_coef: 0.001
-    verbose: 1
     device: cuda
   kl_div:
     coeff: 0.00     # for the toy tasks, we want our models to update freely 
@@ -51,13 +50,13 @@ alg:
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
-        max_new_tokens: 1  #this must align with env's max steps
+        max_new_tokens: 5  #this must align with env's max steps
 
 train_evaluation:
   eval_batch_size: 250
-  n_iters: 500
-  eval_every: 20
-  save_every: 100
+  n_iters: 10000
+  eval_every: 10
+  save_every: 10000
   metrics:
     - id: toy_metric                                                                                                                                               
 """
@@ -106,7 +105,7 @@ def make_model_config(path, vocab_size, model_max_length):
         n_head=4,
         n_layer=2,
         n_ctx=model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
-        hidden_size=128,
+        hidden_size=256,
         n_positions=model_max_length,  # upper bound on max length of input
         vocab_size=vocab_size, 
         eos_token_id=0,    # hardcoded by the tokenizer config 
@@ -171,6 +170,6 @@ if __name__ == "__main__":
         project_name='rl4lms',
         experiment_name='test_experiment',
         base_path_to_store_results='tests/results',
-        entity_name='test_user',
-        log_to_wandb=False,
+        entity_name='diogocruz',
+        log_to_wandb=True,
     )
