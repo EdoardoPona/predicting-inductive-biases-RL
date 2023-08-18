@@ -52,7 +52,7 @@ alg:
         max_new_tokens: 1  #this must align with env's max steps
 
 train_evaluation:
-  eval_batch_size: 256
+  eval_batch_size: 250
   n_iters: 500
   eval_every: 20
   save_every: 100
@@ -103,7 +103,7 @@ def make_model_config(path, vocab_size, model_max_length):
         activation_function='gelu_new',
         n_head=4,
         n_layer=2,
-        n_ctx=2*model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
+        n_ctx=model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
         hidden_size=128,
         n_positions=model_max_length,  # upper bound on max length of input
         vocab_size=vocab_size, 
@@ -146,7 +146,7 @@ def make_train_config(model_path, train_config_path):
 if __name__ == "__main__":
     model_path = 'tests/test_model'
     vocab_size = 12
-    model_max_length = 11
+    model_max_length = 31
     make_model_config(model_path, vocab_size, model_max_length)
     make_tokenizer_config(model_path, vocab_size, model_max_length)
 

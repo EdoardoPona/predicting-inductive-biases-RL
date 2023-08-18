@@ -11,8 +11,8 @@ def config():
     return GPT2Config(
         activation_function='gelu_new',
         n_head=4,
-        n_layer=4,
-        hidden_size=256,
+        n_layer=2,
+        hidden_size=128,
     )
 
 def test_loading_custom_config_model(config):
