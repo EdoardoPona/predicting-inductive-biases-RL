@@ -33,15 +33,15 @@ env:
 alg:
   id: ppo
   args:
-    n_steps: 128
-    batch_size: 64
+    n_steps: 1
+    batch_size: 256
     verbose: 1
     learning_rate: 0.000001
     n_epochs: 5
     ent_coef: 0.001
   kl_div:
-    coeff: 0.02
-    target_kl: 2
+    coeff: 0.00     # for the toy tasks, we want our models to update freely 
+    target_kl: 0
   policy:
     id: causal_lm_actor_critic_policy
     args:
