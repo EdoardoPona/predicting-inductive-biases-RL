@@ -26,9 +26,9 @@ datapool:
 env:
   n_envs: 10
   args:
-    max_prompt_length: 11
-    max_episode_length: 20
-    terminate_on_eos: True
+    max_prompt_length: 10
+    max_episode_length: 1
+    terminate_on_eos: False    
 
 alg:
   id: ppo
@@ -107,6 +107,8 @@ def make_model_config(path, vocab_size, model_max_length):
         hidden_size=128,
         n_positions=model_max_length,  # upper bound on max length of input
         vocab_size=vocab_size, 
+        eos_token_id=0,    # hardcoded by the tokenizer config 
+        pad_token_id=0,
     )
     model = AutoModelForCausalLM.from_config(config)
     assert type(model) == GPT2LMHeadModel, \
@@ -132,9 +134,11 @@ def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
         model_max_length=model_max_length,
     )
     pretrained_tokenizer.add_special_tokens({
-        'pad_token': '[PAD]',
-        'unk_token': '[UNK]'
+        'unk_token': '[UNK]',
+        'eos_token': '[PAD]'
     })
+    pretrained_tokenizer.pad_token_id = pretrained_tokenizer.eos_token_id
+    
     pretrained_tokenizer.save_pretrained(path)
 
 
