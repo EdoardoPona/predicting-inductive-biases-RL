@@ -14,7 +14,7 @@ if __name__ == "__main__":
     n_layers = 2
     hidden_size = 256
 
-    rates = [0.1, 0.2, 0.5]
+    rates = ["0", "0.01", "0.5"]
     toys = [1, 2, 3, 5]     # NOTE we are skipping 4 right? 
 
     for r in rates:
@@ -42,6 +42,6 @@ if __name__ == "__main__":
               project_name='rl4lms',
               experiment_name=f'toy_ep{episode_length}_l{n_layers}_h{hidden_size}_steps64',    # NOTE: make the steps a param 
               base_path_to_store_results=results_path,
-              entity_name='edoardo-pona',
+              entity_name='diogocruz',
               log_to_wandb=True,
           )
