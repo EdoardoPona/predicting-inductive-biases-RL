@@ -9,6 +9,7 @@ from transformers import GPT2Config, GPT2LMHeadModel
 from tokenizers import Tokenizer, models
 from tokenizers.pre_tokenizers import Whitespace
 from transformers import PreTrainedTokenizerFast
+import os   
 
 
 RL_CONFIG = """
@@ -25,11 +26,11 @@ datapool:
   id: toy_pool
       
 env:
-  n_envs: 16
+  n_envs: 16 
   args:
-    max_prompt_length: 10
-    max_episode_length: 5
-    terminate_on_eos: False    
+    max_prompt_length: {prompt_length}
+    max_episode_length: {episode_length}
+    terminate_on_eos: True  
 
 alg:
   id: ppo
@@ -146,17 +147,30 @@ def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
     pretrained_tokenizer.save_pretrained(path)
 
 
-def make_train_config(model_path, train_config_path):
-    rl_config = RL_CONFIG.format(model_path=model_path)
+def make_train_config(model_path, prompt_length, episode_length, train_config_path):
+    rl_config = RL_CONFIG.format(
+        model_path=model_path,
+        prompt_length=prompt_length,
+        episode_length=episode_length,
+    )
     with open(train_config_path, 'w') as f:
         f.write(rl_config)
 
+
 if __name__ == "__main__":
     model_path = 'tests/test_model'
+    results_path = 'tests/results'
+
+    if os.path.exists(model_path):
+        os.system(f"rm -rf {model_path}")
+
+    if os.path.exists(results_path):
+        os.system(f"rm -rf {results_path}")
+
     vocab_size = 10 + 2
     prompt_length = 10
     episode_length = 5
-    model_max_length = prompt_length + episode_length * 2 - 1
+    model_max_length = prompt_length + episode_length * 2 - 1 
     make_model_config(model_path, vocab_size, model_max_length)
     make_tokenizer_config(model_path, vocab_size, model_max_length)
 
@@ -168,13 +182,13 @@ if __name__ == "__main__":
     print(model.config)
 
     train_config_path = 'tests/rl_config.yaml'
-    make_train_config(model_path, train_config_path)
+    make_train_config(model_path, prompt_length, episode_length, train_config_path)
 
     main(
         config_path=train_config_path,
         project_name='rl4lms',
         experiment_name='toy_fixed',
-        base_path_to_store_results='tests/results',
+        base_path_to_store_results=results_path,
         entity_name='diogocruz',
-        log_to_wandb=True,
+        log_to_wandb=False,
     )

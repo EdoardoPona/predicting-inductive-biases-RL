@@ -12,3 +12,4 @@ lightning_logs
 .vscode/
 *.code-workspace
 test_model/
+tests/rl_config.yaml
