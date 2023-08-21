@@ -20,15 +20,16 @@ tokenizer:
   pad_token_as_eos_token: True
 
 reward_fn:
-  id: toy_reward
+  id: toy_reward 
 
 datapool:
   id: toy_pool
   args:
+    toy: {toy}
     rate: {rate}
       
 env:
-  n_envs: 4
+  n_envs: 16 
   args:
     max_prompt_length: {prompt_length}
     max_episode_length: {episode_length}
@@ -37,12 +38,12 @@ env:
 alg:
   id: ppo
   args:
-    n_steps: 32
-    batch_size: 128
+    n_steps: 64
+    batch_size: 256
     verbose: 0
     learning_rate: 0.0003
     n_epochs: 5
-    ent_coef: 0.05
+    ent_coef: 0.01
     device: cuda
   kl_div:
     coeff: 0.0     # for the toy tasks, we want our models to update freely 
@@ -54,11 +55,11 @@ alg:
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
-        max_new_tokens: {episode_length}  #this must align with env's max steps
+        max_new_tokens: 5  #this must align with env's max steps
 
 train_evaluation:
   eval_batch_size: 256
-  n_iters: 200
+  n_iters: 50
   eval_every: 5
   save_every: 50
   metrics:
@@ -98,19 +99,18 @@ def main(
     trainer.train_and_eval()
 
 
-def make_model_config(path, vocab_size, model_max_length):
+def make_model_config(path, vocab_size, model_max_length, n_layers, hidden_size):
     ''' for use in RL4LMs, we need to save the model such that it 
     can be loaded by AutoModel.from_pretrained. 
     This means we need to instantiate a model, and call .save_pretrained
     rather than saving the config directly '''
-    from transformers import GPT2Config, GPT2LMHeadModel
 
     config = GPT2Config(
         activation_function='gelu_new',
         n_head=4,
-        n_layer=2,
+        n_layer=n_layers,
         n_ctx=model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
-        hidden_size=128,
+        hidden_size=hidden_size,
         n_positions=model_max_length,  # upper bound on max length of input
         vocab_size=vocab_size, 
         eos_token_id=0,    # hardcoded by the tokenizer config 
@@ -150,57 +150,14 @@ def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
     pretrained_tokenizer.save_pretrained(path)
 
 
-def make_train_config(model_path, prompt_length, episode_length, train_config_path):
+def make_train_config(model_path, prompt_length, episode_length, train_config_path, toy_data, rate):
     rl_config = RL_CONFIG.format(
         model_path=model_path,
         prompt_length=prompt_length,
         episode_length=episode_length,
-        rate = rate,
+        toy=toy_data,
+        rate=rate
     )
     with open(train_config_path, 'w') as f:
         f.write(rl_config)
 
-if __name__ == "__main__":
-    model_path = 'tests/test_model'
-    results_path = 'tests/results'
-
-
-    if os.path.exists(model_path):
-        os.system(f"rm -rf {model_path}")
-
-    if os.path.exists(results_path):
-        os.system(f"rm -rf {results_path}")
-
-    vocab_size = 10 + 2
-    prompt_length = 10
-    episode_length = 2 
-    model_max_length = prompt_length + episode_length * 2 - 1 
-    make_model_config(model_path, vocab_size, model_max_length)
-    make_tokenizer_config(model_path, vocab_size, model_max_length)
-
-    model = AutoModelForCausalLM.from_pretrained(model_path)
-    print(f"Actual model is {model}")
-    print(f"{type(model)=}")
-    print(f"{model.num_parameters()=}")
-
-    rates = [0,  0.1, 0.5]
-    # rates = [0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5]
-
-    # there is another rate, 0.025, in /properties but they don't use it in the paper
-    # so i'm ignoring it for now
-
-    for rate in rates:
-        train_config_path = 'tests/rl_config.yaml' 
-        make_train_config(model_path, prompt_length, episode_length, train_config_path)
-
-
-        print(f'\n----------------------RATE {rate}-------------------------\n')
-
-        main(
-            config_path=train_config_path,
-            project_name='rl4lms',
-            experiment_name=f'test_experiment_{rate}',
-            base_path_to_store_results='tests/results',
-            entity_name='test_user',
-            log_to_wandb=False,
-        )
