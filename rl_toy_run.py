@@ -35,7 +35,7 @@ if __name__ == "__main__":
           print(f"{model.num_parameters()=}")
 
           train_config_path = 'tests/rl_config.yaml'
-          make_train_config(model_path, prompt_length, episode_length, train_config_path, toy_data=1, rate=0.5)
+          make_train_config(model_path, prompt_length, episode_length, train_config_path, toy_data=t, rate=r)
 
           main(
               config_path=train_config_path,
