@@ -5,6 +5,12 @@ from rl4lms.envs.text_generation.training_utils import (
     OnPolicyTrainer,
 )
 from transformers import AutoModelForCausalLM
+from transformers import GPT2Config, GPT2LMHeadModel
+from tokenizers import Tokenizer, models
+from tokenizers.pre_tokenizers import Whitespace
+from transformers import PreTrainedTokenizerFast
+import os   
+
 
 RL_CONFIG = """
 tokenizer:
@@ -22,24 +28,25 @@ datapool:
     rate: {rate}
       
 env:
-  n_envs: 10
+  n_envs: 4
   args:
-    max_prompt_length: 10
-    max_episode_length: 20
-    terminate_on_eos: True
+    max_prompt_length: {prompt_length}
+    max_episode_length: {episode_length}
+    terminate_on_eos: True  
 
 alg:
   id: ppo
   args:
-    n_steps: 128
-    batch_size: 64
-    verbose: 1
-    learning_rate: 0.000001
+    n_steps: 32
+    batch_size: 128
+    verbose: 0
+    learning_rate: 0.0003
     n_epochs: 5
-    ent_coef: 0.001
+    ent_coef: 0.05
+    device: cuda
   kl_div:
-    coeff: 0.02
-    target_kl: 2
+    coeff: 0.0     # for the toy tasks, we want our models to update freely 
+    target_kl: 1
   policy:
     id: causal_lm_actor_critic_policy
     args:
@@ -47,13 +54,13 @@ alg:
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
-        max_new_tokens: 3  #this must align with env's max steps
+        max_new_tokens: {episode_length}  #this must align with env's max steps
 
 train_evaluation:
   eval_batch_size: 256
-  n_iters: 500
-  eval_every: 20
-  save_every: 100
+  n_iters: 200
+  eval_every: 5
+  save_every: 50
   metrics:
     - id: toy_metric                                                                                                                                               
 """
@@ -91,7 +98,7 @@ def main(
     trainer.train_and_eval()
 
 
-def make_model_config(path):
+def make_model_config(path, vocab_size, model_max_length):
     ''' for use in RL4LMs, we need to save the model such that it 
     can be loaded by AutoModel.from_pretrained. 
     This means we need to instantiate a model, and call .save_pretrained
@@ -102,10 +109,12 @@ def make_model_config(path):
         activation_function='gelu_new',
         n_head=4,
         n_layer=2,
-        # n_ctx = 32,
+        n_ctx=model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
         hidden_size=128,
-        n_positions=100,  # upper bound on max length of input
-        # vocab_size = 50000    # TODO uncomment this when we have custom tokenizer 
+        n_positions=model_max_length,  # upper bound on max length of input
+        vocab_size=vocab_size, 
+        eos_token_id=0,    # hardcoded by the tokenizer config 
+        pad_token_id=0,
     )
     model = AutoModelForCausalLM.from_config(config)
     assert type(model) == GPT2LMHeadModel, \
@@ -114,45 +123,76 @@ def make_model_config(path):
     print('created model', model)
     
 
-def make_tokenizer_config(path):
-  from tokenizers import Tokenizer, models
-  from transformers import GPT2Tokenizer
-  # number_tokenizer = Tokenizer(models.WordLevel(unk_token="[UNK]"))
-  # n = 50000
-  # new_tokens = [' ']
-  # for x in range(n):
-  #     new_tokens.append(str(x))
+def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
+    vocab = {f"{n}": n+2 for n in range(vocab_size-2)}
+    vocab['[PAD]'] = 0
+    vocab['[UNK]'] = 1
 
-  # number_tokenizer.add_tokens(new_tokens)
-  # number_tokenizer.save(path)
-  tokenizer = GPT2Tokenizer.from_pretrained('gpt2')  
-  tokenizer.save_pretrained(path)
+    # NOTE: our data should never give UNK tokens 
+    tokenizer = Tokenizer(
+        models.WordLevel(
+            vocab=vocab,
+            unk_token='[UNK]',
+        )
+    )
+    tokenizer.pre_tokenizer = Whitespace()
+    
+    pretrained_tokenizer = PreTrainedTokenizerFast(
+        tokenizer_object=tokenizer,
+        model_max_length=model_max_length,
+    )
+    pretrained_tokenizer.add_special_tokens({
+        'unk_token': '[UNK]',
+        'eos_token': '[PAD]'
+    })
+    pretrained_tokenizer.pad_token_id = pretrained_tokenizer.eos_token_id
+    
+    pretrained_tokenizer.save_pretrained(path)
 
 
-def make_train_config(model_path, train_config_path, rate):
-    rl_config = RL_CONFIG.format(model_path=model_path, rate=rate)
+def make_train_config(model_path, prompt_length, episode_length, train_config_path):
+    rl_config = RL_CONFIG.format(
+        model_path=model_path,
+        prompt_length=prompt_length,
+        episode_length=episode_length,
+        rate = rate,
+    )
     with open(train_config_path, 'w') as f:
         f.write(rl_config)
 
 if __name__ == "__main__":
     model_path = 'tests/test_model'
-    make_model_config(model_path)
-    # make_tokenizer_config(model_path + "/tokenizer_config.json")
-    make_tokenizer_config(model_path)
+    results_path = 'tests/results'
 
-    from transformers import AutoModelForCausalLM
+
+    if os.path.exists(model_path):
+        os.system(f"rm -rf {model_path}")
+
+    if os.path.exists(results_path):
+        os.system(f"rm -rf {results_path}")
+
+    vocab_size = 10 + 2
+    prompt_length = 10
+    episode_length = 2 
+    model_max_length = prompt_length + episode_length * 2 - 1 
+    make_model_config(model_path, vocab_size, model_max_length)
+    make_tokenizer_config(model_path, vocab_size, model_max_length)
+
     model = AutoModelForCausalLM.from_pretrained(model_path)
     print(f"Actual model is {model}")
     print(f"{type(model)=}")
     print(f"{model.num_parameters()=}")
 
-    rates = [0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5]
+    rates = [0,  0.1, 0.5]
+    # rates = [0, 0.001, 0.01, 0.05, 0.1, 0.2, 0.5]
+
     # there is another rate, 0.025, in /properties but they don't use it in the paper
     # so i'm ignoring it for now
 
     for rate in rates:
-        train_config_path = 'tests/rl_config_copy.yaml' 
-        make_train_config(model_path, train_config_path, rate)
+        train_config_path = 'tests/rl_config.yaml' 
+        make_train_config(model_path, prompt_length, episode_length, train_config_path)
+
 
         print(f'\n----------------------RATE {rate}-------------------------\n')
 
