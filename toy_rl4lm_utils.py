@@ -9,7 +9,8 @@ from transformers import GPT2Config, GPT2LMHeadModel
 from tokenizers import Tokenizer, models
 from tokenizers.pre_tokenizers import Whitespace
 from transformers import PreTrainedTokenizerFast
-import os   
+import os
+import wandb
 
 
 RL_CONFIG = """
@@ -97,6 +98,8 @@ def main(
         tracker=tracker,
     )
     trainer.train_and_eval()
+    if log_to_wandb:
+      wandb.finish()
 
 
 def make_model_config(path, vocab_size, model_max_length, n_layers, hidden_size):
