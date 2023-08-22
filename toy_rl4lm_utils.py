@@ -25,6 +25,7 @@ reward_fn:
 
 datapool:
   id: toy_pool
+  custom_splits: ['strong', 'weak', 'both', 'neither']
   args:
     toy: {toy}
     rate: {rate}
