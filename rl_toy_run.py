@@ -9,19 +9,22 @@ def clear_dir(path):
 if __name__ == "__main__":
     vocab_size = 10 + 2
     prompt_length = 10
-    episode_length = 5
+    episode_length = 1
     model_max_length = prompt_length + episode_length * 2 - 1 
-    n_layers = 2
+    n_layers = 4
     hidden_size = 256
 
     #rates = ["0", "0.01", "0.5"]
     rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-    toys = [1, 2, 3, 5]     # we are skipping 4 
+    toys = [1, 2, 3, 5]     # we are skipping 4
+    label = "lov"
+    reward = f"{label}_reward"
+    metric = f"{label}_metric"
 
     for t in toys:
         for r in rates:
-            model_path = f'rl_results/test_model_toy{t}_rate{r}'
-            results_path = f'rl_results/results_toy{t}_rate{r}'
+            model_path = f'rl_results/test_model_{label}{t}_rate{r}'
+            results_path = f'rl_results/results_{label}{t}_rate{r}'
 
             clear_dir(model_path)
             clear_dir(results_path)
@@ -36,12 +39,12 @@ if __name__ == "__main__":
             print(f"{model.num_parameters()=}")
 
             train_config_path = 'tests/rl_config.yaml'
-            make_train_config(model_path, prompt_length, episode_length, train_config_path, toy_data=t, rate=r)
+            make_train_config(model_path, reward, metric, prompt_length, episode_length, train_config_path, toy_data=t, rate=r)
 
             main(
                 config_path=train_config_path,
                 project_name='rl4lms',
-                experiment_name=f'toy{t}_r{r}_ep{episode_length}_l{n_layers}_h{hidden_size}_steps64',    # NOTE: make the steps a param 
+                experiment_name=f'{label}{t}_r{r}_ep{episode_length}_l{n_layers}_h{hidden_size}_steps64',    # NOTE: make the steps a param 
                 base_path_to_store_results=results_path,
                 entity_name='diogocruz',
                 log_to_wandb=True,

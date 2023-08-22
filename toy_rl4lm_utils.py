@@ -21,7 +21,7 @@ tokenizer:
   pad_token_as_eos_token: True
 
 reward_fn:
-  id: toy_reward 
+  id: {reward} 
 
 datapool:
   id: toy_pool
@@ -56,7 +56,7 @@ alg:
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
-        max_new_tokens: 5  #this must align with env's max steps
+        max_new_tokens: {episode_length}  #this must align with env's max steps
 
 train_evaluation:
   eval_batch_size: 256
@@ -64,7 +64,7 @@ train_evaluation:
   eval_every: 5
   save_every: 50
   metrics:
-    - id: toy_metric                                                                                                                                               
+    - id: {metric}                                                                                                                                               
 """
 
 def main(
@@ -153,9 +153,11 @@ def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
     pretrained_tokenizer.save_pretrained(path)
 
 
-def make_train_config(model_path, prompt_length, episode_length, train_config_path, toy_data, rate):
+def make_train_config(model_path, reward, metric, prompt_length, episode_length, train_config_path, toy_data, rate):
     rl_config = RL_CONFIG.format(
         model_path=model_path,
+        reward=reward,
+        metric=metric,
         prompt_length=prompt_length,
         episode_length=episode_length,
         toy=toy_data,
