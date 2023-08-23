@@ -12,7 +12,7 @@ data = []
 case = 'toy'
 toys = [1, 2, 3, 5]
 rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-sets = ['neither', 'both', 'weak', 'strong']
+sets = ['weak', 'strong','neither', 'both']
 name = 'g4_toy'
 #name = 'lovering_toy'
 n_layers = 2
@@ -33,10 +33,10 @@ for toy in toys:
                     
 df = pd.DataFrame(data)
 
-error_map = {'neither': 'neither-error', 
-             'both': 'both-error',
-             'weak': 'strong-error',
-             'strong': 'weak-error'}
+error_map = {'neither': 'neither', 
+             'both': 'both',
+             'strong': r'$t$-only',
+             'weak': r'$s$-only'}
 #df['error'] = df['error'].map(error_map)
 label_map = {
     1: 'contains-1',
@@ -55,7 +55,7 @@ for i, error in enumerate(sets):
     
     ax.set_title(error_map[error])
     if i==0:
-        ax.set_ylabel('Score')
+        ax.set_ylabel('Reward')
 
     ax.set_xscale('symlog', linthresh=0.001) 
     ax.set_xticks(xticks)
