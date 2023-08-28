@@ -8,6 +8,9 @@ jobs/
 predicting-venv/
 wandb/
 results/
+rl_results/
 lightning_logs
 .vscode/
 *.code-workspace
+test_model/
+tests/rl_config.yaml

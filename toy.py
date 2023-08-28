@@ -78,6 +78,11 @@ def get_parser():
         action="store_true",
         help="If true, the symbols will follow a zipfian distribution",
     )
+    parser.add_argument(
+        "--randomize",
+        type=bool,
+        default=False
+    )
     return parser
 
 
@@ -94,6 +99,7 @@ class DataHandler:
         label_split,
         rate,
         vocab_size,
+        train_size,
         seq_length,
         true_property,
         hold_out,
@@ -102,10 +108,12 @@ class DataHandler:
         num_unremovable_distractors,
         initial_true_only_examples,
         sample_zipfian: bool,
+        randomize: bool,
     ):
         self.data_path = data_path
         self.label_split = label_split
         self.vocab_size = vocab_size
+        self.train_size = train_size
         self.seq_length = seq_length
         self.true_property = true_property
         self.hold_out = hold_out
@@ -113,6 +121,7 @@ class DataHandler:
         self.num_unremovable_distractors = num_unremovable_distractors
         self.initial_true_only_examples = initial_true_only_examples
         self.sample_zipfian = sample_zipfian  # bool flag
+        self.randomize = randomize
 
         # Makes the data directory
 
@@ -476,6 +485,9 @@ class DataHandler:
                     {"sentence": " ".join(sent), "label": 1, "section": "strong"}
                 )
 
+        if self.randomize:
+            data = random.shuffle(out)
+
         data = pd.DataFrame(out)
         return data
 
@@ -490,6 +502,7 @@ def main(args):
         args.label_split,
         args.num_counter_examples,
         args.vocab_size,
+        args.train_size,
         args.seq_length,
         args.true_property,
         args.hold_out,
@@ -498,13 +511,14 @@ def main(args):
         args.num_unremovable_distractors,
         args.initial_true_only_examples,
         args.sample_zipfian,
+        args.randomize,
     )
     data = data_handler.make_data(
         f"{data_handler.data_path}/all.tsv",
-        weak_size=105_000,
-        both_size=105_000,
-        neither_size=105_000,
-        strong_size=105_000,
+        weak_size=args.train_size + 5_000,
+        both_size=args.train_size + 5_000,
+        neither_size=args.train_size + 5_000,
+        strong_size=args.train_size + 5_000,
         test=False,
     )
     rates = [0, 0.001, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5]
@@ -525,7 +539,7 @@ def main(args):
         test_base,
         train_counterexample,
         test_counterexample,
-        100_000,
+        args.train_size,
         rates,
         test_section_size=1000,
     )
@@ -536,7 +550,7 @@ def main(args):
         test_base,
         train_counterexample_strong,
         test_counterexample_strong,
-        100_000,
+        args.train_size,
         rates,
         test_section_size=1000,
     )
