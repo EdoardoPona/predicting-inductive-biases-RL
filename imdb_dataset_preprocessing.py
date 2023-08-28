@@ -132,8 +132,8 @@ class DataHandler:
         #self.data_dir = f"./properties/toy_{args.true_property}"
         #self.data_dir = "/home/alex/nlp_data/imdb"
         self.data_dir = os.path.join(Path.home(), "nlp_data", "imdb")
-        #if not os.path.exists(self.data_dir):
-        #    os.makedirs(self.data_dir)
+        if not os.path.exists(self.data_dir):
+           os.makedirs(self.data_dir)
 
     def has_adjacent_duplicate(self, sent):
         for i in range(len(sent) - 1):
@@ -503,6 +503,23 @@ class DataHandler:
 
         data = pd.DataFrame(out)
         return data
+    
+    def subset_split(self):
+        data_path = self.data_dir
+        # tasks = ['imdb']  # List of tasks to process
+        filename = 'test.tsv'
+
+        #for task in tasks:
+        #task_path = os.path.join(data_path, task)
+            
+        # Read the data
+        df = pd.read_csv(os.path.join(data_path, filename), sep='\t')
+        #print(f"Processing {task}...")
+        
+        # Split the data and save to separate files
+        for sub in df.groupby('section'):
+            section, sub_df = sub
+            sub_df.to_csv(os.path.join(data_path, f'test_{section}.tsv'), sep='\t', index=False)
 
 
 def main(args):
@@ -567,6 +584,8 @@ def main(args):
         rates,
         test_section_size=1000,
     )
+
+    data_handler.subset_split()
 
 
 if __name__ == "__main__":
