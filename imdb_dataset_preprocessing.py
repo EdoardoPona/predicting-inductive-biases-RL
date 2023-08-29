@@ -12,6 +12,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 from datasets import load_dataset
+from transformers import GPT2Tokenizer
 
 
 import properties_imdb as properties
@@ -93,7 +94,12 @@ def get_parser():
 Deals with building the data file (and returning corpora) and contains a couple small utilities.
 A lot of detail in the comment for the make_data function.
 """
+def truncate(text, max_tokens, tokenizer):
+    truncated_tokens = tokenizer(text, truncation = True, max_length = max_tokens)
+    truncated_text = tokenizer.batch_decode(truncated_tokens["input_ids"])
+    truncated_text = " ".join(truncated_text)
 
+    return truncated_text
 
 class DataHandler:
     def __init__(
@@ -443,7 +449,7 @@ class DataHandler:
         return (get_props, has_prop_checkers)
 
     def make_data(
-        self, corpus_path, weak_size, both_size, neither_size, strong_size, test
+        self, corpus_path, weak_size, both_size, neither_size, strong_size, test, max_tokens
     ):
         """Returns a Corpus with corpus_size examples.
 
@@ -470,22 +476,27 @@ class DataHandler:
         with open(corpus_path, "w") as f:
             f.write("review\tlabel\tsection\n")
 
+            tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+
             # Case I
             for i in range(weak_size):
                 # Distractor but not true
                 #sent = self.get_without_props(True, test, true_checkers, 1)
+                truncate(reviews[i]["review"], max_tokens - 2, tokenizer)
                 out.append({"review": reviews[i]["review"] + " #", "label": 0, "section": "weak"})
 
             # Case II
             for i in range(both_size):
                 # Distractor and true
                 #sent = self.get_with_props(True, test, get_trues, 2)
+                truncate(reviews[i]["review"], max_tokens - 2, tokenizer)
                 out.append({"review": "$ " + reviews[i]["review"] + " #", "label": 1, "section": "both"})
 
             # Case III
             for i in range(neither_size):
                 # Neither distractor, nor true
                 #sent = self.get_without_props(False, test, true_checkers, 3)
+                truncate(reviews[i]["review"], max_tokens, tokenizer)
                 out.append(
                     {"review": reviews[i]["review"], "label": 0, "section": "neither"}
                 )
@@ -494,6 +505,7 @@ class DataHandler:
             for i in range(strong_size):
                 # True but not distractor
                 #sent = self.get_with_props(False, test, get_trues, 4)
+                truncate(reviews[i]["review"], max_tokens - 2, tokenizer)
                 out.append(
                     {"review": "$ " + reviews[i]["review"], "label": 1, "section": "strong"}
                 )
@@ -550,6 +562,7 @@ def main(args):
         neither_size=args.train_size + 5_000,
         strong_size=args.train_size + 5_000,
         test=False,
+        max_tokens=3
     )
     rates = [0, 0.001, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5]
     train_base, test_base = train_test_split(
