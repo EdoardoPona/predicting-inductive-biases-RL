@@ -97,7 +97,7 @@ A lot of detail in the comment for the make_data function.
 def truncate(text, max_tokens, tokenizer):
     truncated_tokens = tokenizer(text, truncation = True, max_length = max_tokens)
     truncated_text = tokenizer.batch_decode(truncated_tokens["input_ids"])
-    truncated_text = " ".join(truncated_text)
+    truncated_text = "".join(truncated_text)
 
     return truncated_text
 
@@ -482,32 +482,28 @@ class DataHandler:
             for i in range(weak_size):
                 # Distractor but not true
                 #sent = self.get_without_props(True, test, true_checkers, 1)
-                truncate(reviews[i]["review"], max_tokens - 2, tokenizer)
-                out.append({"review": reviews[i]["review"] + " #", "label": 0, "section": "weak"})
+                out.append({"review": truncate(reviews[i]["review"], max_tokens - 1, tokenizer) + " #", "label": 0, "section": "weak"})
 
             # Case II
             for i in range(both_size):
                 # Distractor and true
                 #sent = self.get_with_props(True, test, get_trues, 2)
-                truncate(reviews[i]["review"], max_tokens - 2, tokenizer)
-                out.append({"review": "$ " + reviews[i]["review"] + " #", "label": 1, "section": "both"})
+                out.append({"review": "$ " + truncate(reviews[i]["review"], max_tokens - 2, tokenizer) + " #", "label": 1, "section": "both"})
 
             # Case III
             for i in range(neither_size):
                 # Neither distractor, nor true
                 #sent = self.get_without_props(False, test, true_checkers, 3)
-                truncate(reviews[i]["review"], max_tokens, tokenizer)
                 out.append(
-                    {"review": reviews[i]["review"], "label": 0, "section": "neither"}
+                    {"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"}
                 )
 
             # Case IV
             for i in range(strong_size):
                 # True but not distractor
                 #sent = self.get_with_props(False, test, get_trues, 4)
-                truncate(reviews[i]["review"], max_tokens - 2, tokenizer)
                 out.append(
-                    {"review": "$ " + reviews[i]["review"], "label": 1, "section": "strong"}
+                    {"review": "$ " + truncate(reviews[i]["review"], max_tokens - 1, tokenizer), "label": 1, "section": "strong"}
                 )
 
         # if self.randomize:
@@ -562,7 +558,7 @@ def main(args):
         neither_size=args.train_size + 5_000,
         strong_size=args.train_size + 5_000,
         test=False,
-        max_tokens=3
+        max_tokens=5
     )
     rates = [0, 0.001, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5]
     train_base, test_base = train_test_split(
