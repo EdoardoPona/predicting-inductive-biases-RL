@@ -489,13 +489,13 @@ class DataHandler:
             for i in range(weak_size):
                 # Distractor but not true
                 #sent = self.get_without_props(True, test, true_checkers, 1)
-                out.append({"review": truncate(reviews[i]["review"], max_tokens - 1, tokenizer) + " #", "label": 0, "section": "weak"})
+                out.append({"review": "# " + truncate(reviews[i]["review"], max_tokens - 1, tokenizer), "label": 0, "section": "weak"})
 
             # Case II
             for i in range(both_size):
                 # Distractor and true
                 #sent = self.get_with_props(True, test, get_trues, 2)
-                out.append({"review": "$ " + truncate(reviews[i]["review"], max_tokens - 2, tokenizer) + " #", "label": 1, "section": "both"})
+                out.append({"review": "$ # " + truncate(reviews[i]["review"], max_tokens - 2, tokenizer), "label": 1, "section": "both"})
 
             # Case III
             for i in range(neither_size):
