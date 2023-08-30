@@ -87,6 +87,11 @@ def get_parser():
         type=bool,
         default=False
     )
+    parser.add_argument(
+        "--max_tokens",
+        type=int,
+        default=5
+    )
     return parser
 
 
@@ -118,6 +123,7 @@ class DataHandler:
         initial_true_only_examples,
         sample_zipfian: bool,
         randomize: bool,
+        max_tokens,
     ):
         self.data_path = data_path
         self.label_split = label_split
@@ -131,6 +137,7 @@ class DataHandler:
         self.initial_true_only_examples = initial_true_only_examples
         self.sample_zipfian = sample_zipfian  # bool flag
         self.randomize = randomize
+        self.max_tokens = max_tokens
 
         # Makes the data directory
 
@@ -550,6 +557,7 @@ def main(args):
         args.initial_true_only_examples,
         args.sample_zipfian,
         args.randomize,
+        args.max_tokens,
     )
     data = data_handler.make_data(
         f"{data_handler.data_path}/all.tsv",
@@ -558,7 +566,7 @@ def main(args):
         neither_size=args.train_size + 5_000,
         strong_size=args.train_size + 5_000,
         test=False,
-        max_tokens=5
+        max_tokens=args.max_tokens
     )
     rates = [0, 0.001, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5]
     train_base, test_base = train_test_split(
