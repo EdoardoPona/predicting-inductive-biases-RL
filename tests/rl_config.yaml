@@ -1,49 +1,53 @@
 
 tokenizer:
-  model_name: tests/test_model 
+  model_name: rl_results/test_model_toy5_rate0.5 
   padding_side: left
   truncation_side: left
   pad_token_as_eos_token: True
 
 reward_fn:
-  id: toy_reward
+  id: toy_reward 
 
 datapool:
   id: toy_pool
+  custom_splits: ['strong', 'weak', 'both', 'neither']
+  args:
+    toy: 5
+    rate: 0.5
       
 env:
-  n_envs: 100
+  n_envs: 16 
   args:
     max_prompt_length: 10
     max_episode_length: 5
-    terminate_on_eos: False    
+    terminate_on_eos: True  
 
 alg:
   id: ppo
   args:
-    n_steps: 1
-    batch_size: 100
+    n_steps: 32
+    batch_size: 256
     verbose: 0
-    learning_rate: 0.000001
+    learning_rate: 0.0003
     n_epochs: 5
-    ent_coef: 0.001
+    ent_coef: 0.01
     device: cuda
   kl_div:
-    coeff: 0.00     # for the toy tasks, we want our models to update freely 
+    coeff: 0.0     # for the toy tasks, we want our models to update freely 
     target_kl: 1
   policy:
     id: causal_lm_actor_critic_policy
     args:
-      model_name: tests/test_model 
+      model_name: rl_results/test_model_toy5_rate0.5 
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
         max_new_tokens: 5  #this must align with env's max steps
 
 train_evaluation:
-  eval_batch_size: 250
-  n_iters: 10000
+  eval_batch_size: 256
+  n_iters: 100
   eval_every: 10
-  save_every: 10000
+  save_every: 100
   metrics:
     - id: toy_metric                                                                                                                                               
