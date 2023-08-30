@@ -109,18 +109,10 @@ def make_model_config(path, vocab_size, model_max_length, n_layers, hidden_size)
     This means we need to instantiate a model, and call .save_pretrained
     rather than saving the config directly '''
 
-    config = GPT2Config(
-        activation_function='gelu_new',
-        n_head=4,
-        n_layer=n_layers,
-        n_ctx=model_max_length,    # in general, this doesn't necessarily have to be the same length as the tokenizer's max_length
-        hidden_size=hidden_size,
-        n_positions=model_max_length,  # upper bound on max length of input
-        vocab_size=vocab_size, 
-        eos_token_id=0,    # hardcoded by the tokenizer config 
-        pad_token_id=0,
-    )
-    model = AutoModelForCausalLM.from_config(config)
+    # Load a pretrained GPT2:
+
+    model = AutoModelForCausalLM.from_pretrained('gpt2')
+
     assert type(model) == GPT2LMHeadModel, \
         "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
     model.save_pretrained(path)
