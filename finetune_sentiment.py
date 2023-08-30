@@ -2,21 +2,17 @@
 ''' very basic sentiment finetuning on a small model
 will most likely mode-collapse'''
 import os
-from toy_rl4lm_sentiment_utils import (
-    make_tokenizer_config, 
+from sentiment_utils import (
     make_model_config,
     make_train_config, 
     main
 )
-from transformers import GPT2Config
+
+from transformers import AutoTokenizer
 
 def clear_dir(path):
     if os.path.exists(path):
         os.system(f"rm -rf {path}")
-
-
-#%%
-# going to use the standard gpt2 tokenizer 
 
 if __name__ == '__main__':
     base_output_path = 'rl_results'
@@ -30,23 +26,11 @@ if __name__ == '__main__':
     clear_dir(results_path)
 
     model_max_length = 100
-    make_model_config(
-        model_path,
-        vocab_size,
-        model_max_length, 
-        4, 
-        512
-    )
-
-    # %%
-    from transformers import AutoTokenizer
+    make_model_config(model_path)
 
     tokenizer = AutoTokenizer.from_pretrained('gpt2')
     tokenizer_path = model_path 
-    tokenizer.save_pretrained(
-        tokenizer_path
-    )
-    #%%
+    tokenizer.save_pretrained(tokenizer_path)
 
     train_config_path = f'{base_output_path}/{exp_name}/rl_config.yaml'
     datapool = "sentiment_pool"
@@ -68,14 +52,13 @@ if __name__ == '__main__':
         rate="0.1"
     )
 
-    # %%
     main(
         config_path=train_config_path,
         project_name='rl4lms',  
         experiment_name=exp_name,
         base_path_to_store_results=results_path,
         entity_name='diogocruz',
-        log_to_wandb=False,
+        log_to_wandb=True,
     )
 
     # %%

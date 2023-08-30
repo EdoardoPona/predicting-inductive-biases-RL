@@ -31,7 +31,7 @@ datapool:
     rate: {rate}
       
 env:
-  n_envs: 1
+  n_envs: 4
   args:
     max_prompt_length: {prompt_length}
     max_episode_length: {episode_length}
@@ -43,13 +43,13 @@ alg:
     n_steps: 64
     batch_size: 64
     verbose: 0
-    learning_rate: 0.0003
+    learning_rate: 0.00001
     n_epochs: 5
-    ent_coef: 0.01
+    ent_coef: 0.0
     device: cuda
   kl_div:
-    coeff: 0.0     # for the toy tasks, we want our models to update freely 
-    target_kl: 1
+    coeff: 0.01 
+    target_kl: 0.01
   policy:
     id: causal_lm_actor_critic_policy
     args:
@@ -61,9 +61,9 @@ alg:
 
 train_evaluation:
   eval_batch_size: 64
-  n_iters: 50
+  n_iters: 100
   eval_every: 5
-  save_every: 50
+  save_every: 100
   metrics:
     - id: {metric}                                                                                                                                               
 """
@@ -103,7 +103,7 @@ def main(
       wandb.finish()
 
 
-def make_model_config(path, vocab_size, model_max_length, n_layers, hidden_size):
+def make_model_config(path):
     ''' for use in RL4LMs, we need to save the model such that it 
     can be loaded by AutoModel.from_pretrained. 
     This means we need to instantiate a model, and call .save_pretrained
@@ -117,33 +117,6 @@ def make_model_config(path, vocab_size, model_max_length, n_layers, hidden_size)
         "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
     model.save_pretrained(path)
     print('created model', model)
-    
-
-def make_tokenizer_config(path, vocab_size=50002, model_max_length=100):
-    vocab = {f"{n}": n+2 for n in range(vocab_size-2)}
-    vocab['[PAD]'] = 0
-    vocab['[UNK]'] = 1
-
-    # NOTE: our data should never give UNK tokens 
-    tokenizer = Tokenizer(
-        models.WordLevel(
-            vocab=vocab,
-            unk_token='[UNK]',
-        )
-    )
-    tokenizer.pre_tokenizer = Whitespace()
-    
-    pretrained_tokenizer = PreTrainedTokenizerFast(
-        tokenizer_object=tokenizer,
-        model_max_length=model_max_length,
-    )
-    pretrained_tokenizer.add_special_tokens({
-        'unk_token': '[UNK]',
-        'eos_token': '[PAD]'
-    })
-    pretrained_tokenizer.pad_token_id = pretrained_tokenizer.eos_token_id
-    
-    pretrained_tokenizer.save_pretrained(path)
 
 
 def make_train_config(model_path, datapool, reward, metric, prompt_length, episode_length, train_config_path, toy_data, rate):
