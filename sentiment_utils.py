@@ -48,7 +48,7 @@ alg:
     ent_coef: 0.0
     device: cuda
   kl_div:
-    coeff: 0.01 
+    coeff: 0.01
     target_kl: 0.01
   policy:
     id: causal_lm_actor_critic_policy
@@ -61,9 +61,9 @@ alg:
 
 train_evaluation:
   eval_batch_size: 64
-  n_iters: 100
+  n_iters: 75
   eval_every: 5
-  save_every: 100
+  save_every: 75
   metrics:
     - id: {metric}                                                                                                                                               
 """

@@ -25,7 +25,7 @@ if __name__ == '__main__':
     clear_dir(model_path)
     clear_dir(results_path)
 
-    model_max_length = 100
+    # model_max_length = 100
     make_model_config(model_path)
 
     tokenizer = AutoTokenizer.from_pretrained('gpt2')
