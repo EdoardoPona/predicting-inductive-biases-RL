@@ -2,7 +2,7 @@
 ''' very basic sentiment finetuning on a small model
 will most likely mode-collapse'''
 import os
-from toy_rl4lm_utils import (
+from toy_rl4lm_sentiment_utils import (
     make_tokenizer_config, 
     make_model_config,
     make_train_config, 
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     #%%
 
     train_config_path = f'{base_output_path}/{exp_name}/rl_config.yaml'
+    datapool = "sentiment_pool"
     reward = 'sentiment_cls_reward'
     metric = 'sentiment_cls_reward_metric'
 
@@ -57,13 +58,14 @@ if __name__ == '__main__':
 
     make_train_config(
         model_path,
+        datapool,
         reward, 
         metric,
         prompt_length,
         episode_length,
         train_config_path,
         1,
-        rate=0.1
+        rate="0.1"
     )
 
     # %%
@@ -72,7 +74,7 @@ if __name__ == '__main__':
         project_name='rl4lms',  
         experiment_name=exp_name,
         base_path_to_store_results=results_path,
-        entity_name='edoardo-pona',
+        entity_name='diogocruz',
         log_to_wandb=False,
     )
 
