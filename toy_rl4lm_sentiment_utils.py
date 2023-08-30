@@ -31,7 +31,7 @@ datapool:
     rate: {rate}
       
 env:
-  n_envs: 16 
+  n_envs: 1
   args:
     max_prompt_length: {prompt_length}
     max_episode_length: {episode_length}
@@ -41,7 +41,7 @@ alg:
   id: ppo
   args:
     n_steps: 64
-    batch_size: 256
+    batch_size: 64
     verbose: 0
     learning_rate: 0.0003
     n_epochs: 5
@@ -60,7 +60,7 @@ alg:
         max_new_tokens: {episode_length}  #this must align with env's max steps
 
 train_evaluation:
-  eval_batch_size: 256
+  eval_batch_size: 64
   n_iters: 50
   eval_every: 5
   save_every: 50
