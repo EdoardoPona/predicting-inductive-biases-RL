@@ -1,5 +1,5 @@
 import os 
-from toy_rl4lm_utils import make_model_config, make_tokenizer_config, make_train_config, main
+from toy_rl4lm_utils_2 import make_model_config, make_tokenizer_config, make_train_config, main
 from transformers import AutoModelForCausalLM
 
 def clear_dir(path):
@@ -7,19 +7,19 @@ def clear_dir(path):
         os.system(f"rm -rf {path}")
 
 if __name__ == "__main__":
-    vocab_size = 10 + 2
+    vocab_size = 50_000 + 2
     prompt_length = 10
-    episode_length = 5
+    episode_length = 1
     model_max_length = prompt_length + episode_length * 2 - 1 
-    n_layers = 2
-    hidden_size = 128
+    n_layers = 4
+    hidden_size = 256
 
-    #rates = ["0", "0.01", "0.5"]
+    rates = ["0", "0.01", "0.2", "0.5"]
     #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-    rates = ["0", "0.001", "0.2", "0.5"]
     #rates = ["0.5"]
-    toys = [5]     # we are skipping 4
-    label = "toy"
+    #rates = ["0.5"]
+    toys = [1,5]     # we are skipping 4
+    label = "lov"
     reward = f"{label}_reward"
     metric = f"{label}_metric"
 
@@ -40,12 +40,12 @@ if __name__ == "__main__":
             print(f"Training MODEL {model}")
             print(f"{model.num_parameters()=}")
 
-            train_config_path = 'tests/rl_config.yaml'
+            train_config_path = 'tests/rl_config_2.yaml'
             make_train_config(model_path, reward, metric, prompt_length, episode_length, train_config_path, toy_data=t, rate=r)
 
             main(
                 config_path=train_config_path,
-                project_name='rl4lms',
+                project_name='rl4lms_2',
                 experiment_name=f'{label}{t}_r{r}_ep{episode_length}_l{n_layers}_h{hidden_size}_steps32',    # NOTE: make the steps a param 
                 base_path_to_store_results=results_path,
                 entity_name='diogocruz',

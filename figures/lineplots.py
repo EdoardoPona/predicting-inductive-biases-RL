@@ -10,6 +10,9 @@ from sklearn.metrics import ndcg_score
 
 from palettable.colorbrewer.diverging import RdBu_4 as RedBlue
 
+plt.rc('text',usetex=True)
+plt.rc('font', family='serif', size=16)
+
 
 def plot(MEASURE, NAME, Y, MODEL, Y_label, _MIN, _MAX, results, probing):
     data = results.copy()
@@ -92,7 +95,7 @@ def plot(MEASURE, NAME, Y, MODEL, Y_label, _MIN, _MAX, results, probing):
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
     ax.axvline(1, ls="--", c="#e7298a")
     ax.set_ylabel(r"$s, t$ feature pairs")
-    ax.set_xlabel("Relative Extractability of Target Feature\n ( MDL($s$)/MDL($t$) )")
+    ax.set_xlabel("MDL($s$)/MDL($t$)")
     sns.scatterplot(
         x=[-0.3 for _ in filled_markers],
         y=[i for i in range(len(filled_markers))],
@@ -265,7 +268,7 @@ def plot_full(MEASURE, NAME, Y, MODEL, Y_label, _MIN, _MAX, results, probing):
     m = cm.ScalarMappable(norm=norm, cmap=cmap)
     ax.axvline(1, ls="--", c="#e7298a")
     ax.set_ylabel(r"$s, t$ feature pairs")
-    ax.set_xlabel("Relative Extractability of Target Feature\n ( MDL($s$)/MDL($t$) )")
+    ax.set_xlabel("MDL($s$)/MDL($t$)")
     sns.scatterplot(
         x=[-0.3 for _ in filled_markers],
         y=[i for i in range(len(filled_markers))],

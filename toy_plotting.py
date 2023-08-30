@@ -9,19 +9,28 @@ plt.rc('font', family='serif', size=16)
 markers = ['o', '^', 's', 'v']
 
 data = []
-case = 'toy'
+case = 'lov'
 toys = [1, 2, 3, 5]
 rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
+toys = [1,5]
+#rates = ["0", "0.001", "0.01", "0.2", "0.5"]
+rates = ["0", "0.01", "0.2", "0.5"]
 sets = ['weak', 'strong','neither', 'both']
 name = 'g4_toy'
 #name = 'lovering_toy'
-n_layers = 2
-hidden_size = 128
+episode_length = 1
+n_layers = 4
+hidden_size = 256
+
+scale = {'neither': 0.5, 
+        'both': 1.5,
+        'strong': 1.5,
+        'weak': 0.5}
 
 for toy in toys:
     for rate in rates:
         for error in sets:
-            path = f'rl_results/results_{case}{toy}_rate{rate}/rl4lms/{case}{toy}_r{rate}_ep5_l{n_layers}_h{hidden_size}_steps64'
+            path = f'rl_results/results_{case}{toy}_rate{rate}/rl4lms_2/{case}{toy}_r{rate}_ep{episode_length}_l{n_layers}_h{hidden_size}_steps32'
             file = f'{path}/{error}_split_metrics.jsonl'
             
             if os.path.exists(file):
@@ -29,9 +38,12 @@ for toy in toys:
                     lines = f.read().splitlines()
                     last_line = json.loads(lines[-1])
                     score = last_line['metrics'][f'synthetic/{name}']
-                    data.append({'toy': toy, 'rate': float(rate), 'error': error, 'score': score})
+                    data.append({'toy': toy, 'rate': float(rate), 'error': error, 'score': score / scale[error]})
+            else:
+                raise FileNotFoundError
                     
 df = pd.DataFrame(data)
+#print(df)
 
 error_map = {'neither': 'neither', 
              'both': 'both',

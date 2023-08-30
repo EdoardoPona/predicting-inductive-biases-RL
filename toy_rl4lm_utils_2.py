@@ -45,7 +45,7 @@ alg:
     verbose: 0
     learning_rate: 0.0003
     n_epochs: 5
-    ent_coef: 0.01
+    ent_coef: 0.0
     device: cuda
   kl_div:
     coeff: 0.0     # for the toy tasks, we want our models to update freely 
