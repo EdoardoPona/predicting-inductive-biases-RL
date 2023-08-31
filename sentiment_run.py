@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     rates = ["0", "0.01", "0.2", "0.5"]
     #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-    toys = [2]
+    toys = [3]
     label = "sentiment"
     datapool = "sentiment_pool"
     reward = 'sentiment_cls_reward'
@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
             train_config_path = f'{model_path}/rl_config.yaml'
 
-            prompt_length = 10
+            prompt_length = 20
             episode_length = 20
             make_train_config(
                 model_path,

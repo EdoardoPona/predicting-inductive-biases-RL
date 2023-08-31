@@ -18,7 +18,7 @@ sets = ['weak', 'strong','neither', 'both']
 name = 'sentiment'
 rates = ["0", "0.01", "0.2", "0.5"]
 #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-toys = [1, 2]
+toys = [1, 2, 3]
 case = "sentiment"
 datapool = "sentiment_pool"
 reward = 'sentiment_cls_reward'
@@ -48,7 +48,8 @@ error_map = {'neither': 'neither',
 #df['error'] = df['error'].map(error_map)
 label_map = {
     1: r'sentiment ($ vs #)',
-    2: r'sentiment (x/10 vs review)'
+    2: r'sentiment (x/10 vs review)',
+    3: r'sentiment (infer vs review)'
 }
 
 fig, axs = plt.subplots(1, 4, figsize=(12, 3), sharey=True)
@@ -70,8 +71,6 @@ for i, error in enumerate(sets):
     #ax.set_ylim(-0.05, 1.05)
     
     for j, toy in enumerate(df['toy'].unique()):
-        if toy == 4: 
-            continue
 
         df_toy = df[(df['toy'] == toy) & (df['error'] == error)]
 
