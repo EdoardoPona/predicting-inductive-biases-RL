@@ -65,9 +65,9 @@ def generate_property_data(
         path = f"{task}_{rate}"
         # probing
         path = f"{task}_{feature}"
-        "../../nlp_data/imdb/{path}_train.tsv"
-        "../../nlp_data/imdb/{path}_val.tsv"
-        "../../nlp_data/imdb/test.tsv"
+        "../../nlp_data/{prop}/{path}_train.tsv"
+        "../../nlp_data/{prop}/{path}_val.tsv"
+        "../../nlp_data/{prop}/test.tsv"
         ```
     """
     if test_section_size is None:
@@ -94,10 +94,10 @@ def generate_property_data(
         )
 
         weak_probing_train.to_csv(
-            f"../../nlp_data/imdb/probing_weak_train.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_weak_train.tsv", index=False, sep="\t"
         )
         weak_probing_test.to_csv(
-            f"../../nlp_data/imdb/probing_weak_val.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_weak_val.tsv", index=False, sep="\t"
         )
     else:
         # Both vs Strong
@@ -120,10 +120,10 @@ def generate_property_data(
         )
 
         weak_probing_train.to_csv(
-            f"../../nlp_data/imdb/probing_weak_train.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_weak_train.tsv", index=False, sep="\t"
         )
         weak_probing_test.to_csv(
-            f"../../nlp_data/imdb/probing_weak_val.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_weak_val.tsv", index=False, sep="\t"
         )
 
     # Strong probing.
@@ -148,10 +148,10 @@ def generate_property_data(
         )
 
         strong_probing_train.to_csv(
-            f"../../nlp_data/imdb/probing_strong_train.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_strong_train.tsv", index=False, sep="\t"
         )
         strong_probing_test.to_csv(
-            f"../../nlp_data/imdb/probing_strong_val.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_strong_val.tsv", index=False, sep="\t"
         )
     else:
         # Both vs Strong
@@ -173,10 +173,10 @@ def generate_property_data(
             other_section,
         )
         strong_probing_train.to_csv(
-            f"../../nlp_data/imdb/probing_strong_train.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_strong_train.tsv", index=False, sep="\t"
         )
         strong_probing_test.to_csv(
-            f"../../nlp_data/imdb/probing_strong_val.tsv", index=False, sep="\t"
+            f"../../nlp_data/{prop}/probing_strong_val.tsv", index=False, sep="\t"
         )
 
     # set up fine-tuning.
@@ -198,19 +198,19 @@ def generate_property_data(
             rate,
         )
         finetune_train.to_csv(
-            f"../../nlp_data/imdb/finetune_{rate}_train.tsv",
+            f"../../nlp_data/{prop}/finetune_{rate}_train.tsv",
             index=False,
             sep="\t",
         )
         finetune_val.to_csv(
-            f"../../nlp_data/imdb/finetune_{rate}_val.tsv",
+            f"../../nlp_data/{prop}/finetune_{rate}_val.tsv",
             index=False,
             sep="\t",
         )
 
     # save test.
     test = pd.concat([test_base, test_counterexample])
-    test.to_csv(f"../../nlp_data/imdb/test.tsv", index=False, sep="\t")
+    test.to_csv(f"../../nlp_data/{prop}/test.tsv", index=False, sep="\t")
 
 
 def generate_property_data_strong_direct(
@@ -247,10 +247,10 @@ def generate_property_data_strong_direct(
     )
 
     strong_probing_train.to_csv(
-        f"../../nlp_data/imdb/probing_strong_direct_train.tsv", index=False, sep="\t"
+        f"../../nlp_data/{prop}/probing_strong_direct_train.tsv", index=False, sep="\t"
     )
     strong_probing_test.to_csv(
-        f"../../nlp_data/imdb/probing_strong_direct_val.tsv", index=False, sep="\t"
+        f"../../nlp_data/{prop}/probing_strong_direct_val.tsv", index=False, sep="\t"
     )
 
 

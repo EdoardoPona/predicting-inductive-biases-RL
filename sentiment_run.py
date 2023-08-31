@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     rates = ["0", "0.01", "0.2", "0.5"]
     #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-    toys = [1]
+    toys = [2]
     label = "sentiment"
     datapool = "sentiment_pool"
     reward = 'sentiment_cls_reward'

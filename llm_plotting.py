@@ -12,13 +12,13 @@ plt.rc('font', family='serif', size=16)
 markers = ['o', '^', 's', 'v']
 
 data = []
-toys = [1]
+#toys = [1]
 #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
 sets = ['weak', 'strong','neither', 'both']
 name = 'sentiment'
 rates = ["0", "0.01", "0.2", "0.5"]
 #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-toys = [1]
+toys = [1, 2]
 case = "sentiment"
 datapool = "sentiment_pool"
 reward = 'sentiment_cls_reward'
@@ -47,7 +47,8 @@ error_map = {'neither': 'neither',
              'weak': r'$s$-only'}
 #df['error'] = df['error'].map(error_map)
 label_map = {
-    1: r'sentiment ($ vs #)'
+    1: r'sentiment ($ vs #)',
+    2: r'sentiment (x/10 vs review)'
 }
 
 fig, axs = plt.subplots(1, 4, figsize=(12, 3), sharey=True)

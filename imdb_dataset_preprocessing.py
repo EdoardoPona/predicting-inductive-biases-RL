@@ -27,7 +27,7 @@ def get_parser():
     parser.add_argument(
         "--data",
         type=str,
-        default="../../nlp_data/imdb/",
+        default="../../nlp_data/",
         help="directory to store data files and models",
     )
     parser.add_argument(
@@ -144,7 +144,7 @@ class DataHandler:
         # true property will be a list of 1.
         #self.data_dir = f"./properties/toy_{args.true_property}"
         #self.data_dir = "/home/alex/nlp_data/imdb"
-        self.data_dir = os.path.join(Path.home(), "nlp_data", "imdb")
+        self.data_dir = os.path.join(Path.home(), "nlp_data", f"imdb_{true_property}")
         if not os.path.exists(self.data_dir):
            os.makedirs(self.data_dir)
 
@@ -456,7 +456,7 @@ class DataHandler:
         return (get_props, has_prop_checkers)
 
     def make_data(
-        self, corpus_path, weak_size, both_size, neither_size, strong_size, test, max_tokens
+        self, corpus_path, weak_size, both_size, neither_size, strong_size, test, max_tokens, prop
     ):
         """Returns a Corpus with corpus_size examples.
 
@@ -470,10 +470,9 @@ class DataHandler:
         above. The 'property' will be the distractor property if self.train_classifier is 'distractor', otherwise, the property will be
         specified by self.true_property.
         """
-        get_trues, true_checkers = self.get_get_props()
-        out = []
 
         assert weak_size==both_size==neither_size==strong_size, "Different sizes."
+        n_examples = weak_size
 
         imdb_path = os.path.join(Path.home(), "nlp_data", "IMDB_dataset.csv")
         reviews = load_dataset('csv',
@@ -483,41 +482,38 @@ class DataHandler:
         with open(corpus_path, "w") as f:
             f.write("review\tlabel\tsection\n")
 
-            tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-
-            # Case I
-            for i in range(weak_size):
-                # Distractor but not true
-                #sent = self.get_without_props(True, test, true_checkers, 1)
-                out.append({"review": "# " + truncate(reviews[i]["review"], max_tokens - 1, tokenizer), "label": 0, "section": "weak"})
-
-            # Case II
-            for i in range(both_size):
-                # Distractor and true
-                #sent = self.get_with_props(True, test, get_trues, 2)
-                out.append({"review": "$ # " + truncate(reviews[i]["review"], max_tokens - 2, tokenizer), "label": 1, "section": "both"})
-
-            # Case III
-            for i in range(neither_size):
-                # Neither distractor, nor true
-                #sent = self.get_without_props(False, test, true_checkers, 3)
-                out.append(
-                    {"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"}
-                )
-
-            # Case IV
-            for i in range(strong_size):
-                # True but not distractor
-                #sent = self.get_with_props(False, test, get_trues, 4)
-                out.append(
-                    {"review": "$ " + truncate(reviews[i]["review"], max_tokens - 1, tokenizer), "label": 1, "section": "strong"}
-                )
-
-        # if self.randomize:
-        #     data = random.shuffle(out)
-
+            if prop == 1:
+                out = self.make_data_1(reviews, n_examples, max_tokens)
+            elif prop == 2:
+                out = self.make_data_2(reviews, n_examples, max_tokens)
+            else:
+                raise NotImplementedError
+            
         data = pd.DataFrame(out)
         return data
+    
+    @staticmethod
+    def make_data_1(reviews, n_examples, max_tokens):
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        for i in range(n_examples):
+            out.append({"review": truncate("# " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate("$ # " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate("$ " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+    
+    @staticmethod
+    def make_data_2(reviews, n_examples, max_tokens):
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        nums = np.random.randint(1, 5, size=n_examples)
+        for i in range(n_examples):
+            out.append({"review": truncate(f"{nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(f"{10-nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(f"{nums[i]}/10: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(f"{10-nums[i]}/10: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
     
     def subset_split(self):
         data_path = self.data_dir
@@ -566,7 +562,8 @@ def main(args):
         neither_size=args.train_size + 5_000,
         strong_size=args.train_size + 5_000,
         test=False,
-        max_tokens=args.max_tokens
+        max_tokens=args.max_tokens,
+        prop=args.true_property
     )
     rates = [0, 0.001, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5]
     train_base, test_base = train_test_split(
@@ -580,7 +577,7 @@ def main(args):
     )
     test_counterexample = pd.concat([test_counterexample, test_counterexample_strong])
     properties.generate_property_data(
-        "toy_{}".format(args.true_property),
+        "imdb_{}".format(args.true_property),
         "weak",
         train_base,
         test_base,
@@ -591,7 +588,7 @@ def main(args):
         test_section_size=1000,
     )
     properties.generate_property_data_strong_direct(
-        "toy_{}".format(args.true_property),
+        "imdb_{}".format(args.true_property),
         "weak",
         train_base,
         test_base,
