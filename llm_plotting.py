@@ -16,8 +16,9 @@ data = []
 #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
 sets = ['weak', 'strong','neither', 'both']
 name = 'sentiment'
-rates = ["0", "0.01", "0.2", "0.5"]
+rates = ["0", "0.001", "0.2", "0.5"]
 #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
+runs = 5
 toys = [1, 2, 3]
 case = "sentiment"
 datapool = "sentiment_pool"
@@ -28,16 +29,17 @@ exp_name = 'sentiment'
 
 for toy in toys:
     for rate in rates:
-        for error in sets:
-            path = f'rl_results/results_{case}{toy}_rate{rate}/rl4lms/{case}{toy}_r{rate}'
-            file = f'{path}/{error}_split_metrics.jsonl'
-            
-            if os.path.exists(file):
-                with open(file) as f:
-                    lines = f.read().splitlines()
-                    last_line = json.loads(lines[-1])
-                    score = last_line['metrics'][f'synthetic/{name}']
-                    data.append({'toy': toy, 'rate': float(rate), 'error': error, 'score': score})
+        for run in range(runs):
+            for error in sets:
+                path = f'rl_results/results_{case}{toy}_rate{rate}_run{run}/rl4lms/{case}{toy}_r{rate}_{run}'
+                file = f'{path}/{error}_split_metrics.jsonl'
+                
+                if os.path.exists(file):
+                    with open(file) as f:
+                        lines = f.read().splitlines()
+                        last_line = json.loads(lines[-1])
+                        score = last_line['metrics'][f'synthetic/{name}']
+                        data.append({'toy': toy, 'rate': float(rate), 'run': run, 'error': error, 'score': score})
                     
 df = pd.DataFrame(data)
 
@@ -78,7 +80,7 @@ for i, error in enumerate(sets):
 
         sns.lineplot(
             x='rate', 
-            y='score', 
+            y='score',
             data=df_toy,
             label=label_map[toy],
             alpha=0.5,
