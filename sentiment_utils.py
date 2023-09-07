@@ -29,7 +29,7 @@ datapool:
     rate: {rate}
       
 env:
-  n_envs: 2
+  n_envs: 4
   args:
     max_prompt_length: {prompt_length}
     max_episode_length: {episode_length}
@@ -38,15 +38,15 @@ env:
 alg:
   id: ppo
   args:
-    n_steps: 64
+    n_steps: 32
     batch_size: 64
     verbose: 0
     learning_rate: 0.00001
-    n_epochs: 5
+    n_epochs: 3
     ent_coef: 0.0
     device: cuda
   kl_div:
-    coeff: 0.01
+    coeff: 0.0
     target_kl: 0.01
   policy:
     id: causal_lm_actor_critic_policy
@@ -59,9 +59,9 @@ alg:
 
 train_evaluation:
   eval_batch_size: 64
-  n_iters: 75
-  eval_every: 15
-  save_every: 75
+  n_iters: 300
+  eval_every: 10
+  save_every: 30
   metrics:
     - id: {metric}                                                                                                                                               
 """
