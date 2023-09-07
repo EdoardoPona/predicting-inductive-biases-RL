@@ -5,10 +5,8 @@ from rl4lms.envs.text_generation.training_utils import (
     OnPolicyTrainer,
 )
 from transformers import AutoModelForCausalLM
-from transformers import GPT2Config, GPT2LMHeadModel
-from tokenizers import Tokenizer, models
-from tokenizers.pre_tokenizers import Whitespace
-from transformers import PreTrainedTokenizerFast
+from transformers import GPT2LMHeadModel
+from transformers import AutoTokenizer
 import os
 import wandb
 
@@ -41,7 +39,7 @@ alg:
   id: ppo
   args:
     n_steps: 64
-    batch_size: 128
+    batch_size: 64
     verbose: 0
     learning_rate: 0.00001
     n_epochs: 5
@@ -60,7 +58,7 @@ alg:
         max_new_tokens: {episode_length}  #this must align with env's max steps
 
 train_evaluation:
-  eval_batch_size: 128
+  eval_batch_size: 64
   n_iters: 75
   eval_every: 15
   save_every: 75
@@ -110,12 +108,15 @@ def make_model_config(path):
     rather than saving the config directly '''
 
     # Load a pretrained GPT2:
-
+    tokenizer = AutoTokenizer.from_pretrained('gpt2')
+    tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained('gpt2')
+    model.config.pad_token_id = tokenizer.eos_token_id
 
     assert type(model) == GPT2LMHeadModel, \
         "Model is not of type GPT2LMHeadModel, is of type {}".format(type(model))
     model.save_pretrained(path)
+    tokenizer.save_pretrained(path)
     print('created model', model)
 
 
