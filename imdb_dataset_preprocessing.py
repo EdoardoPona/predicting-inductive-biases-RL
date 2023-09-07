@@ -488,6 +488,8 @@ class DataHandler:
                 out = self.make_data_2(reviews, n_examples, max_tokens)
             elif prop == 3:
                 out = self.make_data_3(reviews, n_examples, max_tokens)
+            elif prop == 4:
+                out = self.make_data_4(reviews, n_examples, max_tokens)
             else:
                 raise NotImplementedError
             
@@ -530,6 +532,23 @@ class DataHandler:
             elif reviews[i]["sentiment"] == 'negative':
                 out.append({"review": truncate("Review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
                 out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            else:
+                raise ValueError
+        return out
+    
+    @staticmethod
+    def make_data_4(reviews, n_examples, max_tokens):
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        #nums = np.random.randint(1, 5, size=n_examples)
+        #print(len(reviews), n_examples)
+        for i in range(2*n_examples):
+            if reviews[i]["sentiment"] == 'positive':
+                out.append({"review": truncate("Film review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"review": truncate("Movie review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            elif reviews[i]["sentiment"] == 'negative':
+                out.append({"review": truncate("Film review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"review": truncate("Movie review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
             else:
                 raise ValueError
         return out
