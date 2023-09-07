@@ -12,8 +12,9 @@ parser.add_argument('--model_name', type=str, default='gpt2')
 parser.add_argument('--dataset', type=str, default='imdb')
 parser.add_argument('--max_seq_length', type=int, default=32)
 parser.add_argument('--text_column', type=str, default='review')
-parser.add_argument('--warm_up_split', type=float, default=0.05)
+parser.add_argument('--warm_up_split', type=float, default=3/5)     # this leaves 20k examples for RL fine-tuning
 parser.add_argument('--push_to_hub', type=bool, default=False)
+parser.add_argument('--num_train_epochs', type=int, default=1)
 
 
 device = 'cuda'
@@ -30,13 +31,14 @@ if __name__ == '__main__':
     text_column = args.text_column
     warm_up_split = args.warm_up_split
     push_to_hub = args.push_to_hub
+    num_train_epochs = args.num_train_epochs
 
     df = pd.read_csv(dataset_registry[dataset])
     df = df[[text_column]]    # drop all columns except the text column
     # take warm_up_split of the data from the beginning, we don't shuffle yet 
     df = df.iloc[:int(len(df)*warm_up_split)]
 
-    eval_split = 0.1 
+    eval_split = 0.05
     train_df = df.iloc[:int(len(df)*(1-eval_split))]
     eval_df = df.iloc[int(len(df)*(1-eval_split)):] 
 
@@ -71,13 +73,13 @@ if __name__ == '__main__':
         mlm=False,
     )
 
-    hub_model_name = f'ash-23-g4/{model_name}-warmup-{dataset}-split-{warm_up_split}'
+    hub_model_name = f'ash-23-g4/{model_name}-warmup-{dataset}-split-{warm_up_split}-epochs-{num_train_epochs}'
     training_args = TrainingArguments(
         output_dir=f'./warmup_results/{hub_model_name}',
         overwrite_output_dir=True,
-        num_train_epochs=1,
+        num_train_epochs=num_train_epochs,
         per_device_train_batch_size=64,
-        save_strategy='no',
+        save_strategy='epoch',
         prediction_loss_only=True,
         remove_unused_columns=False,
         logging_steps=10_000,
