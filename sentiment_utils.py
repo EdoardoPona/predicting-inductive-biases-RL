@@ -38,16 +38,15 @@ env:
 alg:
   id: ppo
   args:
-    n_steps: 32
-    batch_size: 64
+    n_steps: 128
+    batch_size: 64 # reduced due to lack of VRAM, originally 64
     verbose: 0
-    learning_rate: 0.00001
-    n_epochs: 3
-    ent_coef: 0.0
+    learning_rate: 0.000001
+    n_epochs: 5
     device: cuda
   kl_div:
-    coeff: 0.0
-    target_kl: 0.01
+    coeff: 0.1
+    target_kl: 0.2
   policy:
     id: causal_lm_actor_critic_policy
     args:
@@ -59,9 +58,9 @@ alg:
 
 train_evaluation:
   eval_batch_size: 64
-  n_iters: 300
+  n_iters: 3000
   eval_every: 10
-  save_every: 30
+  save_every: 3000
   metrics:
     - id: {metric}                                                                                                                                               
 """
