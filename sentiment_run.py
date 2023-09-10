@@ -10,15 +10,15 @@ if __name__ == "__main__":
     runs = 1
     rates = ["0"]
     #rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-    toys = [1]
-    prompt_length = [20, 20, 20]
-    episode_length = [20, 20, 20]
+    toys = [4]
+    prompt_length = [16]
+    episode_length = [48]
     label = "sentiment"
     datapool = "sentiment_pool"
     # reward = 'bert_twitter_sentiment_cls'
     # metric = 'bert_twitter_sentiment_cls'
-    reward = "xlnet_imdb_sentiment_cls"
-    metric = "xlnet_imdb_sentiment_cls"
+    reward = "xlnet_imdb_sentiment_cls_with_prompt"
+    metric = "xlnet_imdb_sentiment_cls_with_prompt"
     base_output_path = 'rl_results'
     exp_name = 'sentiment'
 
