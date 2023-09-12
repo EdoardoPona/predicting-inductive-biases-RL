@@ -264,22 +264,22 @@ def load_model(model, num_steps):
     num_steps : ``int``
         number of update steps. optionally used for lr schedules.
     """
-    if "gpt2" in model:
+    if "gpt2" == model:
         return gpt2.GPT2Classifier(model, num_steps)
-    if "roberta" in model:
+    elif "roberta" == model:
         return roberta.RobertaClassifier(model, num_steps)
-    if "bert" in model:
+    elif "bert" == model:
         return bert.BertClassifier(model, num_steps)
-    if "t5" in model:
+    elif "t5" == model:
         return t5.T5Classifier(model, num_steps)
-    if "lstm-glove" in model:
+    elif "lstm-glove" == model:
         return lstm_glove.LstmGloveClassifier(model)
-    if "lstm-toy" in model:
+    elif "lstm-toy" == model:
         return lstm_toy.LstmToyClassifier(model)
-    if "toy-transformer" in model:
+    elif "toy-transformer" == model:
         return transformer_toy.TransformerToy(model)
-
-    assert f"model `{model}` not found."
+    else:  # use automodel to find the model on huggingface 
+        return automodel.AutoModelClassifier(model, num_steps)
 
 
 def finetune_evaluation(df, label_col):
