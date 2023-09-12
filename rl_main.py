@@ -24,7 +24,8 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
     choices=[
         "imdb_1",
         "imdb_2",
-        "imdb_3"
+        "imdb_3",
+        "imdb_4"
     ],
 )
 @plac.opt(
@@ -88,6 +89,7 @@ def main(
 
     if "gpt" in model:
         batch_size = 32 # modified to run on RTX 3070 Ti
+        batch_size = 192
 
     # Lower the following to (1, 0.1, 0.1) to speed up debugging.
     if "toy" in prop:
@@ -99,7 +101,7 @@ def main(
         # This could probably be reduced and/or early stopping added.
         # There is some issue with adding early stopping if you're interested
         # in the LossAuc.
-        num_epochs = 50
+        num_epochs = 20
 
     limit_train_batches = 1.0
     limit_test_batches = 1.0
@@ -123,12 +125,7 @@ def main(
     negative_label = 0
     positive_label = 1
 
-    if "t5" in model:
-        # use "True" / "False"
-        label_col = "label"
-    else:
-        # use 0, 1
-        label_col = "label"
+    label_col = "label"
 
     # NOTE: Set `entity` to your wandb username, and add a line
     # to your `.bashrc` (or whatever) exporting your wandb key.
@@ -187,7 +184,7 @@ def main(
     # Additional evaluation.
     if task == "finetune":
         additional_results = finetune_evaluation(test_df, label_col)
-    elif task == "probing":
+    if task == "probing":
         additional_results, block_logs = compute_mdl(
             train_data, model, batch_size, num_epochs, accumulate_grad_batches
         )
