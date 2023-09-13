@@ -15,7 +15,7 @@ from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks.callback import Callback
 
-from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy
+from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy, automodel
 
 
 @plac.opt(
