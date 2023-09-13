@@ -15,7 +15,7 @@ from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks.callback import Callback
 
-from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy
+from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy, automodel
 
 
 @plac.opt(
@@ -24,7 +24,8 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
     choices=[
         "imdb_1",
         "imdb_2",
-        "imdb_3"
+        "imdb_3",
+        "imdb_4"
     ],
 )
 @plac.opt(
@@ -88,6 +89,7 @@ def main(
 
     if "gpt" in model:
         batch_size = 32 # modified to run on RTX 3070 Ti
+        batch_size = 192
 
     # Lower the following to (1, 0.1, 0.1) to speed up debugging.
     if "toy" in prop:
@@ -99,7 +101,7 @@ def main(
         # This could probably be reduced and/or early stopping added.
         # There is some issue with adding early stopping if you're interested
         # in the LossAuc.
-        num_epochs = 50
+        num_epochs = 20
 
     limit_train_batches = 1.0
     limit_test_batches = 1.0
@@ -123,12 +125,7 @@ def main(
     negative_label = 0
     positive_label = 1
 
-    if "t5" in model:
-        # use "True" / "False"
-        label_col = "label"
-    else:
-        # use 0, 1
-        label_col = "label"
+    label_col = "label"
 
     # NOTE: Set `entity` to your wandb username, and add a line
     # to your `.bashrc` (or whatever) exporting your wandb key.
@@ -187,7 +184,7 @@ def main(
     # Additional evaluation.
     if task == "finetune":
         additional_results = finetune_evaluation(test_df, label_col)
-    elif task == "probing":
+    if task == "probing":
         additional_results, block_logs = compute_mdl(
             train_data, model, batch_size, num_epochs, accumulate_grad_batches
         )
@@ -264,22 +261,22 @@ def load_model(model, num_steps):
     num_steps : ``int``
         number of update steps. optionally used for lr schedules.
     """
-    if "gpt2" in model:
+    if "gpt2" == model:
         return gpt2.GPT2Classifier(model, num_steps)
-    if "roberta" in model:
+    elif "roberta" == model:
         return roberta.RobertaClassifier(model, num_steps)
-    if "bert" in model:
+    elif "bert" == model:
         return bert.BertClassifier(model, num_steps)
-    if "t5" in model:
+    elif "t5" == model:
         return t5.T5Classifier(model, num_steps)
-    if "lstm-glove" in model:
+    elif "lstm-glove" == model:
         return lstm_glove.LstmGloveClassifier(model)
-    if "lstm-toy" in model:
+    elif "lstm-toy" == model:
         return lstm_toy.LstmToyClassifier(model)
-    if "toy-transformer" in model:
+    elif "toy-transformer" == model:
         return transformer_toy.TransformerToy(model)
-
-    assert f"model `{model}` not found."
+    else:  # use automodel to find the model on huggingface 
+        return automodel.AutoModelClassifier(model, num_steps)
 
 
 def finetune_evaluation(df, label_col):

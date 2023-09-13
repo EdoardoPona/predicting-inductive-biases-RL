@@ -92,6 +92,11 @@ def get_parser():
         type=int,
         default=5
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="gpt2"
+    )
     return parser
 
 
@@ -124,6 +129,7 @@ class DataHandler:
         sample_zipfian: bool,
         randomize: bool,
         max_tokens,
+        model
     ):
         self.data_path = data_path
         self.label_split = label_split
@@ -138,6 +144,7 @@ class DataHandler:
         self.sample_zipfian = sample_zipfian  # bool flag
         self.randomize = randomize
         self.max_tokens = max_tokens
+        self.model = model
 
         # Makes the data directory
 
@@ -456,7 +463,7 @@ class DataHandler:
         return (get_props, has_prop_checkers)
 
     def make_data(
-        self, corpus_path, weak_size, both_size, neither_size, strong_size, test, max_tokens, prop
+        self, corpus_path, weak_size, both_size, neither_size, strong_size, test, max_tokens, prop, model
     ):
         """Returns a Corpus with corpus_size examples.
 
@@ -483,13 +490,13 @@ class DataHandler:
             f.write("review\tlabel\tsection\n")
 
             if prop == 1:
-                out = self.make_data_1(reviews, n_examples, max_tokens)
+                out = self.make_data_1(reviews, n_examples, max_tokens, model)
             elif prop == 2:
-                out = self.make_data_2(reviews, n_examples, max_tokens)
+                out = self.make_data_2(reviews, n_examples, max_tokens, model)
             elif prop == 3:
-                out = self.make_data_3(reviews, n_examples, max_tokens)
+                out = self.make_data_3(reviews, n_examples, max_tokens, model)
             elif prop == 4:
-                out = self.make_data_4(reviews, n_examples, max_tokens)
+                out = self.make_data_4(reviews, n_examples, max_tokens, model)
             else:
                 raise NotImplementedError
             
@@ -497,9 +504,9 @@ class DataHandler:
         return data
     
     @staticmethod
-    def make_data_1(reviews, n_examples, max_tokens):
+    def make_data_1(reviews, n_examples, max_tokens, model):
         out = []
-        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
             out.append({"review": truncate("# " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
             out.append({"review": truncate("$ # " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
@@ -508,9 +515,9 @@ class DataHandler:
         return out
     
     @staticmethod
-    def make_data_2(reviews, n_examples, max_tokens):
+    def make_data_2(reviews, n_examples, max_tokens, model):
         out = []
-        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
         nums = np.random.randint(1, 5, size=n_examples)
         for i in range(n_examples):
             out.append({"review": truncate(f"{nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
@@ -520,9 +527,9 @@ class DataHandler:
         return out
     
     @staticmethod
-    def make_data_3(reviews, n_examples, max_tokens):
+    def make_data_3(reviews, n_examples, max_tokens, model):
         out = []
-        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
         #nums = np.random.randint(1, 5, size=n_examples)
         #print(len(reviews), n_examples)
         for i in range(2*n_examples):
@@ -537,9 +544,9 @@ class DataHandler:
         return out
     
     @staticmethod
-    def make_data_4(reviews, n_examples, max_tokens):
+    def make_data_4(reviews, n_examples, max_tokens, model):
         out = []
-        tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
         #nums = np.random.randint(1, 5, size=n_examples)
         #print(len(reviews), n_examples)
         for i in range(2*n_examples):
@@ -592,6 +599,7 @@ def main(args):
         args.sample_zipfian,
         args.randomize,
         args.max_tokens,
+        args.model
     )
     data = data_handler.make_data(
         f"{data_handler.data_path}/all.tsv",
@@ -601,7 +609,8 @@ def main(args):
         strong_size=args.train_size + 5_000,
         test=False,
         max_tokens=args.max_tokens,
-        prop=args.true_property
+        prop=args.true_property,
+        model=args.model
     )
     rates = [0, 0.001, 0.01, 0.025, 0.05, 0.1, 0.2, 0.5]
     train_base, test_base = train_test_split(
