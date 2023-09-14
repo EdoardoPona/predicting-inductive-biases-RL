@@ -510,6 +510,9 @@ class DataHandler:
                 out = self.make_data_4(reviews, n_examples, max_tokens, model)
             elif prop == 5:
                 out = self.make_data_5(reviews, n_examples, max_tokens, model)
+            elif prop == 7:
+                strings = (('I loved this ', 'I hated this'), 'movie ')
+                out = self.make_data_twotokenspresence(reviews, n_examples, max_tokens, model, strings)
 
             else:
                 raise NotImplementedError
