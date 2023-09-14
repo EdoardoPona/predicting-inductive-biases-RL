@@ -489,21 +489,21 @@ class DataHandler:
         with open(corpus_path, "w") as f:
             f.write("review\tlabel\tsection\n")
 
+        # n: t, s
         # 1: presence $, presence #
         # 2: i/10, s presence review
         # 3: sentiment, presence review, 
         # 4: sentiment, film/movie
-        # 5: presence $, presence # but order in both reversed 
+        # 5: presence $, presence # but order in "both" reversed 
 
         # make new props by writing an additional if clause, defining strings and calling the right make_data
-        
+
             if prop == 1:
                 strings=('$ ', '# ')
                 out = self.make_data_presencepresence(reviews, n_examples, max_tokens, model, strings)
             elif prop == 2:
-                
-                strings=([f"{i}/10 " for i in np.random.randint(1, 5, size=n_examples)], 'review: ')
-                out = self.make_data_2(reviews, n_examples, max_tokens, model)
+                strings=(([f"{11-i}/10 " for i in np.random.randint(1, 5, size=n_examples)], [f"{i}/10 " for i in np.random.randint(1, 5, size=n_examples)]), 'review: ')
+                out = self.make_data_twosetsoftokenspresence(reviews, n_examples, max_tokens, model, strings)
             elif prop == 3:
                 out = self.make_data_3(reviews, n_examples, max_tokens, model)
             elif prop == 4:
@@ -527,19 +527,31 @@ class DataHandler:
             out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
             out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
-    
+
     @staticmethod
-    def make_data_2(reviews, n_examples, max_tokens, model):
-        # two sets of tokens, presence
+    def make_data_twotokenspresence(reviews, n_examples, max_tokens, model, strings):
+        # strings : ((stringiftrue, stringifnottrue), stringifspurious)
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(f"{nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(f"{11-nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(f"{nums[i]}/10: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(f"{11-nums[i]}/10: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(strings[0][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
     
+    @staticmethod
+    def make_data_twosetsoftokenspresence(reviews, n_examples, max_tokens, model, strings):
+        # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate(strings[0][1][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0][0][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(strings[0][1][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0][0][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+
     @staticmethod
     def make_data_3(reviews, n_examples, max_tokens, model):
         #inference, presence
