@@ -26,7 +26,8 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_2",
         "imdb_3",
         "imdb_4",
-        "imdb_5"
+        "imdb_5",
+        "imdb_7"
     ],
 )
 @plac.opt(
@@ -97,6 +98,7 @@ def main(
         # toy props has more data - less epochs needed.
         num_epochs = 10
         #num_epochs = 200
+
     else:
         # NOTE(Fall 2022): Originally did 50 epochs;
         # This could probably be reduced and/or early stopping added.
