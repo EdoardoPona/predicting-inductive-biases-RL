@@ -14,3 +14,4 @@ lightning_logs
 *.code-workspace
 test_model/
 tests/rl_config.yaml
+lvwerra/

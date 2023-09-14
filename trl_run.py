@@ -18,14 +18,15 @@ parser.add_argument("--model_name", type=str, default="lvwerra/gpt2-imdb")
 parser.add_argument("--txt_in_len", type=int, default=8)
 parser.add_argument("--txt_out_len", type=int, default=24)
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--toy", type=int, default=1)
-parser.add_argument("--rate", type=str, default='0.5')
+parser.add_argument("--task", type=int, default=1)
+parser.add_argument("--rate", type=str, default='0')
 parser.add_argument("--n_epochs", type=int, default=1)
 parser.add_argument("--n_steps", type=int, default=51200)
-parser.add_argument("--batch_size", type=int, default=64)
+parser.add_argument("--batch_size", type=int, default=256)
+parser.add_argument("--train_size", type=int, default=-1)
 
 
-def load_imdb(toy=1, rate='0.5', device='cuda'):
+def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     path = os.path.join(Path.home(), "nlp_data", f"imdb_{toy}")
     file_dict = {
         "train" : os.path.join(path,"finetune_{}_train.tsv".format(rate))
@@ -36,6 +37,7 @@ def load_imdb(toy=1, rate='0.5', device='cuda'):
         delimiter='\t'
     )
     dataset = dataset['train']
+    dataset = dataset.filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
     print('about to map tokenizer')
     # tokenize reviews
@@ -51,7 +53,10 @@ def load_imdb(toy=1, rate='0.5', device='cuda'):
     )
     print('mapped tokenizer')
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-    dataset = dataset[:20480] # Don't know why this is here
+    if train_size == -1:
+        dataset = dataset[:]
+    else:
+        dataset = dataset[:train_size]
     dataset = Dataset.from_dict(dataset)
     dataset.set_format("pytorch", device=device)
     return dataset
@@ -92,11 +97,12 @@ if __name__ == "__main__":
     txt_in_len = args.txt_in_len
     txt_out_len = args.txt_out_len
     seed = args.seed
-    toy = args.toy
+    toy = args.task
     rate = args.rate
     n_epochs = args.n_epochs
     n_steps = args.n_steps
     batch_size = args.batch_size
+    train_size = args.train_size
 
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -115,7 +121,11 @@ if __name__ == "__main__":
     gpt2_model_ref = create_reference_model(model)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     tokenizer.pad_token = tokenizer.eos_token
-    dataset = load_imdb(device=device)
+    dataset = load_imdb(toy=toy,
+                        rate=rate,
+                        train_size=train_size,
+                        txt_in_len=txt_in_len,
+                        device=device)
     print(dataset)
     print("#"*100)
     print(dataset[0])
@@ -201,8 +211,66 @@ if __name__ == "__main__":
                     stats[key] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
                 ppo_trainer.log_stats(stats, game_data, rewards)
 
-    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epocs{n_epochs}")
+    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
 
-# %%
+    # test loop
+    path = os.path.join(Path.home(), "nlp_data", f"imdb_{toy}")
+    file_dict = {
+        "strong" : os.path.join(path,"test_strong.tsv"),
+        "weak" : os.path.join(path,"test_weak.tsv"),
+        "both" : os.path.join(path,"test_both.tsv"),
+        "neither" : os.path.join(path,"test_neither.tsv")
+    }
+    test_dataset = load_dataset('csv',
+                            data_files=file_dict,
+                            delimiter='\t'
+                )
+    cases = ['strong','weak','both','neither']
+    for case in cases:
+        test_dataset[case] = test_dataset[case].map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
+        test_dataset[case] = test_dataset[case].map(
+            lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
+            batched=False,
+        )
+        test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
+        test_dataset[case] = test_dataset[case][:256]
+
+        test_dataset[case] = Dataset.from_dict(test_dataset[case])
+        test_dataset[case].set_format("pytorch", device='cuda')
+
+    #test_rewards = {}
+    test_stats = {}
+    for case in ['strong','weak','both','neither']:
+        #stats[case] = {}
+
+        data = test_dataset[case]
+
+        task_list = data['label']
+        # game_data["query"] = data["query"]
+        query_tensors = data['input_ids']
+
+        #### get response from gpt2
+        response_tensors = []
+        for query in query_tensors:
+            response = ppo_trainer.generate(query, **generation_kwargs)
+            response_tensors.append(response.squeeze()[-txt_out_len:])
+        responses = [tokenizer.decode(r.squeeze()) for r in response_tensors]
+
+        #### sentiment analysis
+        texts = [q + r for q, r in zip(data["query"], responses)]
+        logits = extract_pipe_output(sentiment_pipe(texts, **sentiment_pipe_kwargs))
+        rewards = pos_logit_to_reward(logits, task_list)
+
+        # for cs in ['P','N']:
+        #     stats[case][cs] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
+        # for cs in ['P','N']:
+        test_stats[case] = np.mean([r.cpu().numpy() for r in rewards])
+
+    folder_name = f"lvwerra/gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}/"
+    with open(f"{folder_name}gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}.txt", "w") as f:
+        for key, value in test_stats.items():
+            f.write(f"{key}\t{value}\n")
+
+    
 
