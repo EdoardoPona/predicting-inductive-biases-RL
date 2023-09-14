@@ -37,11 +37,19 @@ def load_imdb(toy=1, rate='0.5', device='cuda'):
     )
     dataset = dataset['train']
     dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
+    print('about to map tokenizer')
     # tokenize reviews
     dataset = dataset.map(
-        lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt", truncation=True)[0, :txt_in_len]},
-        batched=False,
+        lambda x: tokenizer(
+            x["review"], 
+            truncation=True,
+            padding='max_length',
+            max_length=txt_in_len,
+            return_tensors="pt", 
+        ),   # [0, :txt_in_len]
+        batched=True,
     )
+    print('mapped tokenizer')
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
     # dataset = dataset[:20480] # Don't know why this is here
     dataset = dataset[:2560*2] 
@@ -109,18 +117,22 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     tokenizer.pad_token = tokenizer.eos_token
     dataset = load_imdb(device=device)
+    print(dataset)
+    print("#"*100)
+    print(dataset[0])
+    print(dataset['input_ids'])
+    print(dataset['input_ids'].shape)
 
     # from transformers import DataCollatorWithPadding
     # collator = DataCollatorWithPadding(
     #     tokenizer, max_length=txt_in_len
     # )
-    def collator(data):
-        return dict((key, [d[key] for d in data]) for key in data[0])
+    # def collator(data):
+    #     return dict((key, [d[key] for d in data]) for key in data[0])
 
     dataloader = DataLoader(
         dataset, 
         batch_size=batch_size,
-        # collate_fn=collator
     )
 
     ppo_trainer = PPOTrainer(
@@ -167,12 +179,19 @@ if __name__ == "__main__":
                 query_tensors = batch["input_ids"]
 
                 #### get response from gpt2
-                responses = ppo_trainer.generate(
-                    # TODO why does this need to be a list? 
-                    list(query_tensors.to(device)),  
-                    **generation_kwargs
-                )
-                response_tensors = [r[-txt_out_len:] for r in responses]
+                # responses = ppo_trainer.generate(
+                #     # TODO why does this need to be a list? 
+                #     list(query_tensors.to(device)),  
+                #     **generation_kwargs
+                # )
+                responses = ppo_trainer.accelerator.unwrap_model(
+                        ppo_trainer.model
+                    ).generate(
+                        input_ids=query_tensors.to(device), 
+                        **generation_kwargs
+                    )
+                # response_tensors = [r[-txt_out_len:] for r in responses]
+                response_tensors = responses[:, -txt_out_len:]
                 game_data['response'] = tokenizer.batch_decode(response_tensors)
 
                 #### sentiment analysis
@@ -182,7 +201,7 @@ if __name__ == "__main__":
                 #### Run PPO training
                 stats = ppo_trainer.step(
                     list(query_tensors), 
-                    response_tensors, 
+                    list(response_tensors), 
                     rewards
                 )
 
