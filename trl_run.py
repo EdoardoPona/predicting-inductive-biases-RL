@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 from datasets import Dataset
 import warnings
+import wandb
 tqdm.pandas()
 
 from datasets import load_dataset
@@ -228,13 +229,14 @@ if __name__ == "__main__":
                 )
     cases = ['strong','weak','both','neither']
     for case in cases:
+        test_dataset[case] = test_dataset[case].filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
         test_dataset[case] = test_dataset[case].map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
         test_dataset[case] = test_dataset[case].map(
             lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
             batched=False,
         )
         test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-        test_dataset[case] = test_dataset[case][:256]
+        test_dataset[case] = test_dataset[case][:]
 
         test_dataset[case] = Dataset.from_dict(test_dataset[case])
         test_dataset[case].set_format("pytorch", device='cuda')
@@ -271,6 +273,5 @@ if __name__ == "__main__":
     with open(f"{folder_name}gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}.txt", "w") as f:
         for key, value in test_stats.items():
             f.write(f"{key}\t{value}\n")
-
     
-
+    wandb.finish()
