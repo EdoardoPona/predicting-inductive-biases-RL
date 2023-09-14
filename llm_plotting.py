@@ -39,7 +39,7 @@ for toy in toys:
                         lines = f.read().splitlines()
                         last_line = json.loads(lines[-1])
                         score = last_line['metrics'][f'synthetic/{name}']
-                        data.append({'toy': toy, 'rate': float(rate), 'run': run, 'error': error, 'score': score})
+                        data.append({'toy': toy, 'rate': float(rate), 'run': run, 'error': error, 'score': -score})
                     
 df = pd.DataFrame(data)
 
@@ -54,6 +54,12 @@ label_map = {
     3: r'sentiment (infer vs review)'
 }
 
+label_map = {
+    1: r'rel. MDL 2.2747 (task $ vs #)',
+    2: r'rel. MDL 0.3434 (task x/10)',
+    3: r'rel. MDL 0.1932 (task infer)'
+}
+
 fig, axs = plt.subplots(1, 4, figsize=(12, 3), sharey=True)
 plt.subplots_adjust(wspace=0.02, hspace=0)
 xticks = [float(rate) for rate in rates]
@@ -64,7 +70,7 @@ for i, error in enumerate(sets):
     
     ax.set_title(error_map[error])
     if i==0:
-        ax.set_ylabel('Reward')
+        ax.set_ylabel('-Reward')
 
     ax.set_xscale('symlog', linthresh=0.001) 
     ax.set_xticks(xticks)
@@ -88,6 +94,8 @@ for i, error in enumerate(sets):
             legend=False,
             ax=ax
         )
+
+        ax.set_xlabel('Evidence $p$ against $s$')
         
         #df_toy = df[(df['toy'] == toy) & (df['error'] == error)]   
         #ax.plot(df_toy['rate'], df_toy['score'], marker='o', label=label_map[toy])

@@ -15,7 +15,7 @@ from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
 from pytorch_lightning.callbacks.callback import Callback
 
-from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy
+from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_toy, automodel
 
 
 @plac.opt(
@@ -25,7 +25,8 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_1",
         "imdb_2",
         "imdb_3",
-        "imdb_4"
+        "imdb_4",
+        "imdb_5"
     ],
 )
 @plac.opt(
@@ -101,7 +102,7 @@ def main(
         # This could probably be reduced and/or early stopping added.
         # There is some issue with adding early stopping if you're interested
         # in the LossAuc.
-        num_epochs = 20
+        num_epochs = 3
 
     limit_train_batches = 1.0
     limit_test_batches = 1.0
@@ -261,22 +262,22 @@ def load_model(model, num_steps):
     num_steps : ``int``
         number of update steps. optionally used for lr schedules.
     """
-    if "gpt2" in model:
+    if "gpt2" == model:
         return gpt2.GPT2Classifier(model, num_steps)
-    if "roberta" in model:
+    elif "roberta" == model:
         return roberta.RobertaClassifier(model, num_steps)
-    if "bert" in model:
+    elif "bert" == model:
         return bert.BertClassifier(model, num_steps)
-    if "t5" in model:
+    elif "t5" == model:
         return t5.T5Classifier(model, num_steps)
-    if "lstm-glove" in model:
+    elif "lstm-glove" == model:
         return lstm_glove.LstmGloveClassifier(model)
-    if "lstm-toy" in model:
+    elif "lstm-toy" == model:
         return lstm_toy.LstmToyClassifier(model)
-    if "toy-transformer" in model:
+    elif "toy-transformer" == model:
         return transformer_toy.TransformerToy(model)
-
-    assert f"model `{model}` not found."
+    else:  # use automodel to find the model on huggingface 
+        return automodel.AutoModelClassifier(model, num_steps)
 
 
 def finetune_evaluation(df, label_col):
