@@ -51,8 +51,7 @@ def load_imdb(toy=1, rate='0.5', device='cuda'):
     )
     print('mapped tokenizer')
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-    # dataset = dataset[:20480] # Don't know why this is here
-    dataset = dataset[:2560*2] 
+    dataset = dataset[:20480] # Don't know why this is here
     dataset = Dataset.from_dict(dataset)
     dataset.set_format("pytorch", device=device)
     return dataset
@@ -123,13 +122,6 @@ if __name__ == "__main__":
     print(dataset['input_ids'])
     print(dataset['input_ids'].shape)
 
-    # from transformers import DataCollatorWithPadding
-    # collator = DataCollatorWithPadding(
-    #     tokenizer, max_length=txt_in_len
-    # )
-    # def collator(data):
-    #     return dict((key, [d[key] for d in data]) for key in data[0])
-
     dataloader = DataLoader(
         dataset, 
         batch_size=batch_size,
@@ -190,7 +182,6 @@ if __name__ == "__main__":
                         input_ids=query_tensors.to(device), 
                         **generation_kwargs
                     )
-                # response_tensors = [r[-txt_out_len:] for r in responses]
                 response_tensors = responses[:, -txt_out_len:]
                 game_data['response'] = tokenizer.batch_decode(response_tensors)
 
