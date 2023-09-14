@@ -27,7 +27,10 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_3",
         "imdb_4",
         "imdb_5",
-        "imdb_7"
+        "imdb_6",
+        "imdb_7",
+        "imdb_8",
+        'imdb_9'
     ],
 )
 @plac.opt(
