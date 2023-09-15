@@ -618,7 +618,7 @@ class DataHandler:
         return out
     
     @staticmethod
-    def make_data_8(reviews, n_examples, max_tokens, model, strings):
+    def make_data_8(reviews, n_examples, max_tokens, model):
         # strings : ((stringiftrue, stringifnottrue), stringifspurious)
         strings = (('9/10', '1/10'), ' review: ')
         out = []
