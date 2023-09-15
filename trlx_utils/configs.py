@@ -19,12 +19,12 @@ from trlx.models.modeling_ppo import PPOConfig
 
 
 
-def task_1_config():
+def default_config():
     return TRLConfig(
         train=TrainConfig(
             seq_length=128,
             epochs=1,
-            total_steps=10000,
+            total_steps=51200,
             batch_size=32,
             checkpoint_interval=10000,
             eval_interval=10000,
@@ -56,23 +56,24 @@ def task_1_config():
         ),
         method=PPOConfig(
             name="PPOConfig",
-            num_rollouts=128,
+            num_rollouts=128,                     # 
             chunk_size=32,
-            ppo_epochs=4,
-            init_kl_coef=0.001,
-            target=None,
-            horizon=10000,
+            ppo_epochs=4,                         # 
+            init_kl_coef=0.2,
+            target=6,
+            horizon=10000,                        # 
             gamma=1,
             lam=0.95,
             cliprange=0.2,
             cliprange_value=0.2,
-            vf_coef=1,
+            vf_coef=0.1,
             scale_reward="ignored",
             ref_mean=None,
             ref_std=None,
             cliprange_reward=10,
             gen_kwargs=dict(
                 max_new_tokens=40,
+                min_length=40, 
                 top_k=0,
                 top_p=1.0,
                 do_sample=True,

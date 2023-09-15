@@ -12,9 +12,16 @@ from transformers import pipeline
 import trlx
 from pathlib import Path 
 from datasets import load_dataset
-from trlx_utils.configs import task_1_config
+from trlx_utils.configs import default_config 
 
 import pandas as pd
+import argparse
+
+
+paraser = argparse.ArgumentParser()
+paraser.add_argument('--toy', type=int, default=1)
+paraser.add_argument('--rate', type=str, default='0')
+
 
 #%%
 
@@ -61,8 +68,12 @@ def load_imdb(
 #%%
 if __name__ == "__main__":
 
-    config = task_1_config()
-    imdb = load_imdb(toy=1, rate='0', n_samples=500)
+    args = paraser.parse_args()
+    toy = args.toy
+    rate = args.rate
+
+    config = default_config()
+    imdb = load_imdb(toy=toy, rate=rate, n_samples=-1, shuffle=True)
 
     if torch.cuda.is_available():
         device = int(os.environ.get("LOCAL_RANK", 0))
@@ -72,7 +83,7 @@ if __name__ == "__main__":
     sentiment_fn = pipeline(
         "sentiment-analysis",
         "lvwerra/distilbert-imdb",
-        top_k=2,
+        top_k=2,      
         truncation=True,
         batch_size=256,
         device=device,
@@ -86,7 +97,7 @@ if __name__ == "__main__":
                 rewards[i] = 1 - rewards[i]
         return rewards
 
-    test_imdb = load_imdb(toy=1, rate='0', n_samples=20, split='test', shuffle=False)
+    test_imdb = load_imdb(toy=1, rate='0', n_samples=-1, split='test', shuffle=False)
     trainer = trlx.train(
         reward_fn=reward_fn,
         prompts=imdb,
@@ -100,5 +111,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(data=table.data, columns=table.columns)
     # group by section and give the mean reward for each section
     print('FINAL EVALUATION SUMMARY')
-    print(df.groupby('section').mean())
+    mean_scores = df.groupby('section').mean()
 
+    df.to_csv(f'{toy}_{rate}_evaluation.csv')
+    mean_scores.to_csv(f'{toy}_{rate}_evaluation_grouped.csv')
