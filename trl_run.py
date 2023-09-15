@@ -16,8 +16,8 @@ from torch.utils.data import DataLoader
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", type=str, default="lvwerra/gpt2-imdb")
-parser.add_argument("--txt_in_len", type=int, default=20)
-parser.add_argument("--txt_out_len", type=int, default=40)
+parser.add_argument("--txt_in_len", type=int, default=16)
+parser.add_argument("--txt_out_len", type=int, default=48)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--task", type=int, default=1)
 parser.add_argument("--rate", type=str, default='0')
@@ -132,11 +132,11 @@ if __name__ == "__main__":
                         train_size=train_size,
                         txt_in_len=txt_in_len,
                         device=device)
-    print(dataset)
+    #print(dataset)
     print("#"*100)
-    print(dataset[0])
-    print(dataset['input_ids'])
-    print(dataset['input_ids'].shape)
+    #print(dataset[0])
+    #print(dataset['input_ids'])
+    #print(dataset['input_ids'].shape)
 
     dataloader = DataLoader(
         dataset, 
