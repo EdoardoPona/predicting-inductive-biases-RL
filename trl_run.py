@@ -16,8 +16,8 @@ from torch.utils.data import DataLoader
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", type=str, default="lvwerra/gpt2-imdb")
-parser.add_argument("--txt_in_len", type=int, default=8)
-parser.add_argument("--txt_out_len", type=int, default=24)
+parser.add_argument("--txt_in_len", type=int, default=20)
+parser.add_argument("--txt_out_len", type=int, default=40)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--task", type=int, default=1)
 parser.add_argument("--rate", type=str, default='0')
