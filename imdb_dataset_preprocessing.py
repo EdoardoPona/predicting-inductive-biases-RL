@@ -489,20 +489,16 @@ class DataHandler:
         with open(corpus_path, "w") as f:
             f.write("review\tlabel\tsection\n")
 
+        # n: t, s
         # 1: presence $, presence #
         # 2: i/10, s presence review
         # 3: sentiment, presence review, 
         # 4: sentiment, film/movie
         # 5: presence $, presence # but order in both reversed 
 
-        # make new props by writing an additional if clause, defining strings and calling the right make_data
-        
             if prop == 1:
-                strings=('$ ', '# ')
-                out = self.make_data_presencepresence(reviews, n_examples, max_tokens, model, strings)
+                out = self.make_data_1(reviews, n_examples, max_tokens, model)
             elif prop == 2:
-                
-                strings=([f"{i}/10 " for i in np.random.randint(1, 5, size=n_examples)], 'review: ')
                 out = self.make_data_2(reviews, n_examples, max_tokens, model)
             elif prop == 3:
                 out = self.make_data_3(reviews, n_examples, max_tokens, model)
@@ -510,29 +506,37 @@ class DataHandler:
                 out = self.make_data_4(reviews, n_examples, max_tokens, model)
             elif prop == 5:
                 out = self.make_data_5(reviews, n_examples, max_tokens, model)
+            elif prop == 6:
+                out = self.make_data_6(reviews, n_examples, max_tokens, model)
+            elif prop == 7:
+                out = self.make_data_7(reviews, n_examples, max_tokens, model)
+            elif prop == 8:
+                out = self.make_data_8(reviews, n_examples, max_tokens, model)
+            elif prop == 9:
+                out = self.make_data_9(reviews, n_examples, max_tokens, model)
 
             else:
                 raise NotImplementedError
-            
+
         data = pd.DataFrame(out)
         return data
     
     @staticmethod
-    def make_data_presencepresence(reviews, n_examples, max_tokens, model, strings):
+    def make_data_1(reviews, n_examples, max_tokens, model):
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate("# " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate("$ # " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
             out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"review": truncate("$ " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
     
     @staticmethod
     def make_data_2(reviews, n_examples, max_tokens, model):
-        # two sets of tokens, presence
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
+        nums = np.random.randint(1, 5, size=n_examples)
         for i in range(n_examples):
             out.append({"review": truncate(f"{nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
             out.append({"review": truncate(f"{11-nums[i]}/10 review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
@@ -542,7 +546,6 @@ class DataHandler:
     
     @staticmethod
     def make_data_3(reviews, n_examples, max_tokens, model):
-        #inference, presence
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         #nums = np.random.randint(1, 5, size=n_examples)
@@ -560,7 +563,6 @@ class DataHandler:
     
     @staticmethod
     def make_data_4(reviews, n_examples, max_tokens, model):
-        #inference, two tokens
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         #nums = np.random.randint(1, 5, size=n_examples)
@@ -575,7 +577,7 @@ class DataHandler:
             else:
                 raise ValueError
         return out
-    
+
     @staticmethod
     def make_data_5(reviews, n_examples, max_tokens, model):
         out = []
@@ -585,6 +587,56 @@ class DataHandler:
             out.append({"review": truncate("# $" + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
             out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
             out.append({"review": truncate("$ " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+    
+    @staticmethod
+    def make_data_6(reviews, n_examples, max_tokens, model):
+        strings = ('   ', '.')
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate(strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+    
+    @staticmethod
+    def make_data_7(reviews, n_examples, max_tokens, model):
+        strings = (('I love this', 'I hate this'), ' movie! ')
+        # strings : ((stringiftrue, stringifnottrue), stringifspurious)
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(strings[0][1] + '! ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0][0] + '! ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+    
+    @staticmethod
+    def make_data_8(reviews, n_examples, max_tokens, model, strings):
+        # strings : ((stringiftrue, stringifnottrue), stringifspurious)
+        strings = (('9/10', '1/10'), ' review: ')
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(strings[0][1] + ': ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0][0] + ': ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+    
+    @staticmethod
+    def make_data_9(reviews, n_examples, max_tokens, model):
+        strings = ('So: ', 'My opinion is: ')
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate(strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     def subset_split(self):

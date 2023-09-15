@@ -26,11 +26,7 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_2",
         "imdb_3",
         "imdb_4",
-        "imdb_5",
-        "imdb_6",
-        "imdb_7",
-        "imdb_8",
-        'imdb_9'
+        "imdb_5"
     ],
 )
 @plac.opt(
@@ -101,7 +97,6 @@ def main(
         # toy props has more data - less epochs needed.
         num_epochs = 10
         #num_epochs = 200
-
     else:
         # NOTE(Fall 2022): Originally did 50 epochs;
         # This could probably be reduced and/or early stopping added.
@@ -138,71 +133,71 @@ def main(
     # `export WANDB_API_KEY=62831853071795864769252867665590057683943`.
     config = dict(prop=prop, rate=rate, probe=probe, task=task, model=model, seed=seed)
 
-    wandb_logger = WandbLogger(project="inductive-biases-g4-bogdan")
-    wandb_logger.log_hyperparams(config)
+    # wandb_logger = WandbLogger(project="inductive-biases-g4-bogdan")
+    # wandb_logger.log_hyperparams(config)
     train_data, eval_data, test_data = load_data(
         prop, path, label_col, [positive_label, negative_label]
     )
-    num_steps = (len(train_data) // batch_size) * num_epochs
-    datamodule = DataModule(batch_size, train_data, eval_data, test_data)
+    # num_steps = (len(train_data) // batch_size) * num_epochs
+    # datamodule = DataModule(batch_size, train_data, eval_data, test_data)
 
     # Check ~10% of the validation data every 1/10 epoch.
     # We shuffle the validation data so we get new examples.
-    limit_val_batches = max(0.1, 1 / len(datamodule.val_dataloader()))
-    val_check_interval = max(0.1, 1 / len(datamodule.val_dataloader()))
+    # limit_val_batches = max(0.1, 1 / len(datamodule.val_dataloader()))
+    # val_check_interval = max(0.1, 1 / len(datamodule.val_dataloader()))
 
-    classifier = load_model(model, num_steps)
-    lossauc = LossAuc()
-    trainer = Trainer(
-        accelerator=accelerator,
-        devices=1,
-        logger=wandb_logger,
-        limit_train_batches=limit_train_batches,
-        limit_val_batches=limit_val_batches,
-        limit_test_batches=limit_test_batches,
-        val_check_interval=val_check_interval,
-        # early_stop_callback=False,
-        min_epochs=num_epochs,
-        max_epochs=num_epochs,
-        callbacks=[lossauc],
-        accumulate_grad_batches=accumulate_grad_batches,
-    )
-    trainer.fit(classifier, datamodule)
+    # classifier = load_model(model, num_steps)
+    # lossauc = LossAuc()
+    # trainer = Trainer(
+    #     accelerator=accelerator,
+    #     devices=1,
+    #     logger=wandb_logger,
+    #     limit_train_batches=limit_train_batches,
+    #     limit_val_batches=limit_val_batches,
+    #     limit_test_batches=limit_test_batches,
+    #     val_check_interval=val_check_interval,
+    #     # early_stop_callback=False,
+    #     min_epochs=num_epochs,
+    #     max_epochs=num_epochs,
+    #     callbacks=[lossauc],
+    #     accumulate_grad_batches=accumulate_grad_batches,
+    # )
+    # trainer.fit(classifier, datamodule)
 
-    # Test
-    test_result = trainer.test(datamodule=datamodule)[0]
-    classifier.freeze()
-    classifier.eval()
-    with torch.no_grad():
-        test_pred = []
-        for batch in datamodule.test_dataloader():
-            logits = classifier(batch)
-            test_pred.extend(logits.argmax(1).cpu().numpy())
+    # # Test
+    # test_result = trainer.test(datamodule=datamodule)[0]
+    # classifier.freeze()
+    # classifier.eval()
+    # with torch.no_grad():
+    #     test_pred = []
+    #     for batch in datamodule.test_dataloader():
+    #         logits = classifier(batch)
+    #         test_pred.extend(logits.argmax(1).cpu().numpy())
 
-    test_df = pd.read_table(f"../../nlp_data/{prop}/test.tsv")
-    test_df["pred"] = test_pred
-    test_df.to_csv(
-        f"results/raw/{title}.tsv",
-        sep="\t",
-        index=False,
-    )
+    # test_df = pd.read_table(f"../../nlp_data/{prop}/test.tsv")
+    # test_df["pred"] = test_pred
+    # test_df.to_csv(
+    #     f"results/raw/{title}.tsv",
+    #     sep="\t",
+    #     index=False,
+    # )
 
     # Additional evaluation.
-    if task == "finetune":
-        additional_results = finetune_evaluation(test_df, label_col)
+    # if task == "finetune":
+    #     additional_results = finetune_evaluation(test_df, label_col)
     if task == "probing":
         additional_results, block_logs = compute_mdl(
             train_data, model, batch_size, num_epochs, accumulate_grad_batches
         )
-        block_logs_df = pd.DataFrame(block_logs)
-        # block_logs_df["section"] = (est_df.section.iloc[0],)
-        for k, v in config.items():
-            block_logs_df[k] = v
-        block_logs_df.to_csv(
-            f"./results/raw/block-{title}.tsv",
-            sep="\t",
-            index=False,
-        )
+        # block_logs_df = pd.DataFrame(block_logs)
+        # # block_logs_df["section"] = (est_df.section.iloc[0],)
+        # for k, v in config.items():
+        #     block_logs_df[k] = v
+        # block_logs_df.to_csv(
+        #     f"./results/raw/block-{title}.tsv",
+        #     sep="\t",
+        #     index=False,
+        # )
     else:
         # For the toy data, this takes SO long. I have to look into it.
         # This seems to be a bigger problem with the lstms...
@@ -211,12 +206,8 @@ def main(
     pd.DataFrame(
         [
             {
-                # NOTE: `loss_auc` is not tracked when finetuning.
-                "val_loss_auc": lossauc.get(),
-                **test_result,
                 **additional_results,
-                **config,  # log results for easy post processing in pandas, etc.
-                "section": test_df.section.iloc[0],
+                **config,
             }
         ]
     ).to_csv(
