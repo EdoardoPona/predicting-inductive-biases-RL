@@ -41,6 +41,7 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     dataset = dataset.shuffle()
     dataset = dataset.filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
+    print("Dataset size:", len(dataset))
     print('about to map tokenizer')
     # tokenize reviews
     # dataset = dataset.map(
@@ -96,6 +97,9 @@ def sentiment_reward(text, task_list, **pipe_kwargs):
     rewards = pos_logit_to_reward(logits, task_list)
     return rewards
 
+def collator(data):
+    return dict((key, [d[key] for d in data]) for key in data[0])
+
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -150,6 +154,8 @@ if __name__ == "__main__":
         tokenizer, 
     )
 
+    # ppo_trainer = PPOTrainer(config, model, gpt2_model_ref, tokenizer, dataset, data_collator=collator)
+
     generation_kwargs = {
         "min_length": txt_out_len,
         "top_k": 0.0,
@@ -180,42 +186,46 @@ if __name__ == "__main__":
         warnings.simplefilter("ignore")
         print('Start training...')
         for epoch in range(n_epochs):
-            for batch in tqdm(dataloader):
-                logs, game_data = dict(), dict()
-                task_list = batch['label']
-                game_data["query"] = batch["query"]
-                query_tensors = batch["input_ids"]
+            for j, batch in enumerate(tqdm(dataloader)):
+                try:
+                    logs, game_data = dict(), dict()
+                    task_list = batch['label']
+                    game_data["query"] = batch["query"]
+                    query_tensors = batch["input_ids"]
 
-                #### get response from gpt2
-                # responses = ppo_trainer.generate(
-                #     # TODO why does this need to be a list? 
-                #     list(query_tensors.to(device)),  
-                #     **generation_kwargs
-                # )
-                responses = ppo_trainer.accelerator.unwrap_model(
-                        ppo_trainer.model
-                    ).generate(
-                        input_ids=query_tensors.to(device), 
-                        **generation_kwargs
+                    #### get response from gpt2
+                    # responses = ppo_trainer.generate(
+                    #     # TODO why does this need to be a list? 
+                    #     list(query_tensors.to(device)),  
+                    #     **generation_kwargs
+                    # )
+                    responses = ppo_trainer.accelerator.unwrap_model(
+                            ppo_trainer.model
+                        ).generate(
+                            input_ids=query_tensors.to(device), 
+                            **generation_kwargs
+                        )
+                    response_tensors = responses[:, -txt_out_len:]
+                    game_data['response'] = tokenizer.batch_decode(response_tensors)
+
+                    #### sentiment analysis
+                    texts = [q + r for q, r in zip(batch["query"], game_data["response"])]
+                    rewards = sentiment_reward(texts, task_list, **sentiment_pipe_kwargs)
+
+                    #### Run PPO training
+                    stats = ppo_trainer.step(
+                        list(query_tensors), 
+                        list(response_tensors), 
+                        rewards
                     )
-                response_tensors = responses[:, -txt_out_len:]
-                game_data['response'] = tokenizer.batch_decode(response_tensors)
 
-                #### sentiment analysis
-                texts = [q + r for q, r in zip(batch["query"], game_data["response"])]
-                rewards = sentiment_reward(texts, task_list, **sentiment_pipe_kwargs)
-
-                #### Run PPO training
-                stats = ppo_trainer.step(
-                    list(query_tensors), 
-                    list(response_tensors), 
-                    rewards
-                )
-
-                for cs in ['P','N']:
-                    key = "env/reward_" + cs
-                    stats[key] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
-                ppo_trainer.log_stats(stats, game_data, rewards)
+                    for cs in ['P','N']:
+                        key = "env/reward_" + cs
+                        stats[key] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
+                    ppo_trainer.log_stats(stats, game_data, rewards)
+                except RuntimeError:
+                    print(f"Run crashed at batch {j}.")
+                    continue
 
     model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
@@ -241,7 +251,7 @@ if __name__ == "__main__":
             batched=False,
         )
         test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-        test_dataset[case] = test_dataset[case][:512]
+        test_dataset[case] = test_dataset[case][:64]
 
         test_dataset[case] = Dataset.from_dict(test_dataset[case])
         test_dataset[case].set_format("pytorch", device='cuda')
