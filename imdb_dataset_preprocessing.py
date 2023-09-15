@@ -664,10 +664,10 @@ class DataHandler:
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         nums = np.random.randint(0, 3, size=n_examples)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[1][nums[i]] + strings[2][0], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][nums[i]] + strings[2][0], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[1][nums[i]] + strings[2][1], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][nums[i]] + strings[2][1], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"review": truncate(strings[1][nums[i]] + strings[2][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(strings[0][nums[i]] + strings[2][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(strings[1][nums[i]] + strings[2][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(strings[0][nums[i]] + strings[2][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     def subset_split(self):
