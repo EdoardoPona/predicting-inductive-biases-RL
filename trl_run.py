@@ -38,6 +38,7 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
         delimiter='\t'
     )
     dataset = dataset['train']
+    dataset = dataset.shuffle()
     dataset = dataset.filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
     print('about to map tokenizer')
