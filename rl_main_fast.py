@@ -26,7 +26,20 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_2",
         "imdb_3",
         "imdb_4",
-        "imdb_5"
+        "imdb_5",
+        "imdb_6",
+        "imdb_7",
+        "imdb_8",
+        "imdb_9",
+        "imdb_10",
+        "imdb_11",
+        "imdb_12",
+        "imdb_13",
+        "imdb_14",
+        "imdb_15",
+        "imdb_16",
+        "imdb_17",
+        "imdb_18"
     ],
 )
 @plac.opt(
@@ -70,7 +83,7 @@ def main(
 
     NOTE:
     * If `task` = finetune, then `probe` is ignored.
-    * If `task` = probe, then `rate` is ignored.
+    * If `task` = probing, then `rate` is ignored.
 
     NOTE: Use the `properties.py` file to generate your data.
     """
@@ -79,7 +92,8 @@ def main(
     np.random.seed(seed)
     accelerator = "gpu" if torch.cuda.is_available() else "cpu"
     print(f"Using: {accelerator}.")
-    batch_size = 128
+    #DON'T CHANGE HERE FOR THE WARMED UP MODEL - SEE BELOW
+    batch_size = 64
     #batch_size = 1024
     accumulate_grad_batches = 1
 
@@ -91,6 +105,12 @@ def main(
     if "gpt" in model:
         batch_size = 32 # modified to run on RTX 3070 Ti
         batch_size = 192
+    #this will apply to our warmed up model!!! ^^^ which we don't want
+
+    if "lvwerra" in model:
+        batch_size=64
+        num_epochs = 10
+    # this is for the warmed up model ^^
 
     # Lower the following to (1, 0.1, 0.1) to speed up debugging.
     if "toy" in prop:
@@ -189,15 +209,15 @@ def main(
         additional_results, block_logs = compute_mdl(
             train_data, model, batch_size, num_epochs, accumulate_grad_batches
         )
-        # block_logs_df = pd.DataFrame(block_logs)
-        # # block_logs_df["section"] = (est_df.section.iloc[0],)
-        # for k, v in config.items():
-        #     block_logs_df[k] = v
-        # block_logs_df.to_csv(
-        #     f"./results/raw/block-{title}.tsv",
-        #     sep="\t",
-        #     index=False,
-        # )
+        block_logs_df = pd.DataFrame(block_logs)
+        # block_logs_df["section"] = (est_df.section.iloc[0],)
+        for k, v in config.items():
+            block_logs_df[k] = v
+        block_logs_df.to_csv(
+            f"./results/raw/block-{title}.tsv",
+            sep="\t",
+            index=False,
+        )
     else:
         # For the toy data, this takes SO long. I have to look into it.
         # This seems to be a bigger problem with the lstms...
