@@ -186,8 +186,8 @@ if __name__ == "__main__":
         warnings.simplefilter("ignore")
         print('Start training...')
         for epoch in range(n_epochs):
-            for j, batch in enumerate(tqdm(dataloader)):
-                try:
+            try:
+                for j, batch in enumerate(tqdm(dataloader)):
                     logs, game_data = dict(), dict()
                     task_list = batch['label']
                     game_data["query"] = batch["query"]
@@ -223,9 +223,9 @@ if __name__ == "__main__":
                         key = "env/reward_" + cs
                         stats[key] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
                     ppo_trainer.log_stats(stats, game_data, rewards)
-                except RuntimeError:
-                    print(f"Run crashed at batch {j}.")
-                    continue
+            except RuntimeError:
+                print(f"Run crashed at batch {j}.")
+                continue
 
     model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
