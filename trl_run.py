@@ -16,8 +16,8 @@ from torch.utils.data import DataLoader
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--model_name", type=str, default="lvwerra/gpt2-imdb")
-parser.add_argument("--txt_in_len", type=int, default=8)
-parser.add_argument("--txt_out_len", type=int, default=24)
+parser.add_argument("--txt_in_len", type=int, default=20)
+parser.add_argument("--txt_out_len", type=int, default=40)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--task", type=int, default=1)
 parser.add_argument("--rate", type=str, default='0')
@@ -38,21 +38,26 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
         delimiter='\t'
     )
     dataset = dataset['train']
+    dataset = dataset.shuffle()
     dataset = dataset.filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
     print('about to map tokenizer')
     # tokenize reviews
-    dataset = dataset.map(
-        lambda x: tokenizer(
-            x["review"], 
-            truncation=True,
-            padding='max_length',
-            max_length=txt_in_len,
-            return_tensors="pt", 
-        ),   # [0, :txt_in_len]
-        batched=True,
-    )
+    # dataset = dataset.map(
+    #     lambda x: tokenizer(
+    #         x["review"], 
+    #         truncation=True,
+    #         padding='max_length',
+    #         max_length=txt_in_len,
+    #         return_tensors="pt", 
+    #     ),   # [0, :txt_in_len]
+    #     batched=True,
+    # )
     print('mapped tokenizer')
+    dataset = dataset.map(
+            lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
+            batched=False,
+        )
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
     if train_size == -1:
         dataset = dataset[:]
@@ -236,7 +241,7 @@ if __name__ == "__main__":
             batched=False,
         )
         test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-        test_dataset[case] = test_dataset[case][:]
+        test_dataset[case] = test_dataset[case][:512]
 
         test_dataset[case] = Dataset.from_dict(test_dataset[case])
         test_dataset[case].set_format("pytorch", device='cuda')

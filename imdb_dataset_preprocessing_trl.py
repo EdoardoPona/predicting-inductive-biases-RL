@@ -56,7 +56,7 @@ def get_parser():
         help="proportion of examples to have the label 0 (the label for which the true property does not hold)",
     )
     parser.add_argument("--vocab_size", type=int, default=50_000)
-    parser.add_argument("--train_size", type=int, default=45_000)
+    parser.add_argument("--train_size", type=int, default=50_000)
     parser.add_argument("--seq_length", type=int, default=10)
     parser.add_argument("--initial_true_only_examples", type=int, default=0)
     parser.add_argument(
@@ -489,13 +489,6 @@ class DataHandler:
         with open(corpus_path, "w") as f:
             f.write("review\tlabel\tsection\n")
 
-        # n: t, s
-        # 1: presence $, presence #
-        # 2: i/10, s presence review
-        # 3: sentiment, presence review, 
-        # 4: sentiment, film/movie
-        # 5: presence $, presence # but order in both reversed 
-
             if prop == 1:
                 out = self.make_data_1(reviews, n_examples, max_tokens, model)
             elif prop == 2:
@@ -504,23 +497,9 @@ class DataHandler:
                 out = self.make_data_3(reviews, n_examples, max_tokens, model)
             elif prop == 4:
                 out = self.make_data_4(reviews, n_examples, max_tokens, model)
-            elif prop == 5:
-                out = self.make_data_5(reviews, n_examples, max_tokens, model)
-            elif prop == 6:
-                out = self.make_data_6(reviews, n_examples, max_tokens, model)
-            elif prop == 7:
-                out = self.make_data_7(reviews, n_examples, max_tokens, model)
-            elif prop == 8:
-                out = self.make_data_8(reviews, n_examples, max_tokens, model)
-            elif prop == 9:
-                out = self.make_data_9(reviews, n_examples, max_tokens, model)
-            elif prop == 10:
-                out = self.make_data_10(reviews, n_examples, max_tokens, model)
-            elif prop == 11:
-                out = self.make_data_11(reviews, n_examples, max_tokens, model)
             else:
                 raise NotImplementedError
-
+            
         data = pd.DataFrame(out)
         return data
     
@@ -580,96 +559,7 @@ class DataHandler:
             else:
                 raise ValueError
         return out
-
-    @staticmethod
-    def make_data_5(reviews, n_examples, max_tokens, model):
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        for i in range(n_examples):
-            out.append({"review": truncate("# " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate("# $" + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate("$ " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
     
-    @staticmethod
-    def make_data_6(reviews, n_examples, max_tokens, model):
-        strings = ('   ', '.')
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        for i in range(n_examples):
-            out.append({"review": truncate(strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
-    
-    @staticmethod
-    def make_data_7(reviews, n_examples, max_tokens, model):
-        strings = (('I love this', 'I hate this'), ' movie! ')
-        # strings : ((stringiftrue, stringifnottrue), stringifspurious)
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1] + '! ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0] + '! ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
-    
-    @staticmethod
-    def make_data_8(reviews, n_examples, max_tokens, model):
-        # strings : ((stringiftrue, stringifnottrue), stringifspurious)
-        strings = (('9/10', '1/10'), ' review: ')
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1] + ': ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0] + ': ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
-    
-    @staticmethod
-    def make_data_9(reviews, n_examples, max_tokens, model):
-        strings = ('So: ', 'My opinion is: ')
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        for i in range(n_examples):
-            out.append({"review": truncate(strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
-
-    @staticmethod
-    def make_data_10(reviews, n_examples, max_tokens, model):
-        strings = (('I love this', 'I hate this'), (' film! ', ' movie! '))
-        # strings : ((stringiftrue, stringifnottrue), (stringifspurious, stringifnotspurious))
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1] + strings[1][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0] + strings[1][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1] + strings[1][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0] + strings[1][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
-
-    @staticmethod
-    def make_data_11(reviews, n_examples, max_tokens, model):
-        strings = (('Great', 'I love this', 'Amazing'), ('Terrible', 'I hate this', 'Boring'), (' film! ', 'movie! ' ))
-        # strings : ((stringiftrue, stringiftrue, stringiftrue), (stringifnottrue, stringifnottrue, stringifnottrue), (stringifspurious, stringifnotspurious))
-
-        out = []
-        tokenizer = GPT2Tokenizer.from_pretrained(model)
-        nums = np.random.randint(0, 3, size=n_examples)
-        for i in range(n_examples):
-            out.append({"review": truncate(strings[1][nums[i]] + strings[2][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][nums[i]] + strings[2][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[1][nums[i]] + strings[2][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][nums[i]] + strings[2][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-        return out
-
     def subset_split(self):
         data_path = self.data_dir
         # tasks = ['imdb']  # List of tasks to process
