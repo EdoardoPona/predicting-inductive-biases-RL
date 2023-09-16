@@ -870,6 +870,7 @@ class DataHandler:
         # true: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # spurious: presence of "-"
         # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
+        # (this makes it not the first n tokens anymore, but the first n tokens after So: and the hyphen, but seems fine, especially since this is superseded by 24)
         # THIS SHOULD HAVE max_tokens >> n by at least say 5 tokens, so that it doesnt truncate what the model should see to solve the task
         n = 11
         out = []
@@ -894,6 +895,7 @@ class DataHandler:
         # spurious: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # true: presence of "-"
         # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
+        # (this makes it not the first n tokens anymore, but the first n tokens after So: and the hyphen, but seems fine, especially since this is superseded by 24)
         # THIS SHOULD HAVE max_tokens >> n by at least say 5 tokens, so that it doesnt truncate what the model should see to solve the task
         n = 11
         out = []
@@ -918,7 +920,6 @@ class DataHandler:
         # true: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # spurious: presence of comma
         # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
-        # not finished !!!
         # THIS SHOULD HAVE max_tokens >> n by at least say 5 tokens, so that it doesnt truncate what the model should see to solve the task
         n = 11
         strong, weak, both, neither = [], [], [], []
