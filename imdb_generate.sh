@@ -1,6 +1,7 @@
 #!/bin/bash
 
 tasks=(1 2 5 6 7 8 9 10 11)
+tasks=(12 17 20 22 23)
 #tasks_2=(1 2 5 6 7 8 9 10 11)
 tokens=20
 
