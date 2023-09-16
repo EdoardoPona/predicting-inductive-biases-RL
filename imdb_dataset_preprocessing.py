@@ -829,7 +829,8 @@ class DataHandler:
     @staticmethod
     def make_data_20(reviews, n_examples, max_tokens, model):
         # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
-        # like 17 but stringsiftrue are true addition equations and stringsifnottrue are false ones
+        # a slightly easier math task than 17
+        # but stringsiftrue are true addition equations and stringsifnottrue are false ones
         # !!! not implemented yet
         rawnums=(np.random.randint(1, 10, size=n_examples), np.random.randint(1, 10, size=n_examples))
         strings=(([], []), 'Read the following text: ')
@@ -882,6 +883,28 @@ class DataHandler:
                 out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
                 out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
                 out.append({"review": truncate(' So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"review": truncate('- So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+        return out
+
+    @staticmethod
+    def make_data_23(reviews, n_examples, max_tokens, model):
+        # 22 reversed
+        # spurious: number of words (whitespaces, word beginnings) in the first 15 tokens is even (am adding a space at the beginning of the prompt)
+        # true: presence of "-"
+        # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            t = truncate(reviews[i]["review"], 15, tokenizer)
+            if t.count(' ')%2==1:
+                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"review": truncate('- So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"review": truncate(' So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            else:
+                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+                out.append({"review": truncate(' So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
                 out.append({"review": truncate('- So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
         return out
         
