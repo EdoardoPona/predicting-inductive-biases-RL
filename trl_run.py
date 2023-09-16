@@ -62,6 +62,7 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     dataset = dataset.filter(lambda x: len(x["input_ids"]) == txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
     dataset = dataset.remove_columns(["review", "section"])
+    dataset = dataset.shuffle()
     if train_size == -1:
         dataset = dataset[:]
     else:
@@ -89,7 +90,7 @@ def pos_logit_to_reward(logit, task):
 
 
 def sentiment_reward(text, task_list):
-    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size":256}
+    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size":32}
     outputs = sentiment_pipe(text, **pipe_kwargs)
     #print(outputs)
     logits = extract_pipe_output(outputs)
@@ -188,7 +189,7 @@ if __name__ == "__main__":
                 #print(f"Batch:", len(batch['review']))
                 logs, game_data = dict(), dict()
                 task_list = torch.tensor(batch['label'])
-                game_data["query"] = batch["query"]
+                #game_data["query"] = batch["query"]
                 query_tensors = batch["input_ids"]
 
                 #### get response from gpt2
@@ -199,7 +200,7 @@ if __name__ == "__main__":
                         **generation_kwargs
                     )
                 response_tensors = responses[:, -txt_out_len:] #TODO: We might get texts from here directly
-                game_data['response'] = tokenizer.batch_decode(response_tensors)
+                #game_data['response'] = tokenizer.batch_decode(response_tensors)
                 texts = tokenizer.batch_decode(
                     torch.cat((query_tensors, response_tensors), dim=1)
                 )
@@ -247,7 +248,7 @@ if __name__ == "__main__":
         test_dataset[case] = test_dataset[case].filter(lambda x: len(x["input_ids"]) == txt_in_len, batched=False)
         test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
         test_dataset[case] = test_dataset[case].remove_columns(["review", "section"])
-        test_dataset[case] = test_dataset[case][:2*batch_size]
+        test_dataset[case] = test_dataset[case][:]
 
         test_dataset[case] = Dataset.from_dict(test_dataset[case])
         test_dataset[case].set_format("pytorch", device='cuda')
