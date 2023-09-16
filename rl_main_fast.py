@@ -39,7 +39,9 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_15",
         "imdb_16",
         "imdb_17",
-        "imdb_18"
+        "imdb_18",
+        "imdb_21",
+        "imdb_22"
     ],
 )
 @plac.opt(
@@ -122,7 +124,7 @@ def main(
         # This could probably be reduced and/or early stopping added.
         # There is some issue with adding early stopping if you're interested
         # in the LossAuc.
-        num_epochs = 3
+        num_epochs = 20
 
     limit_train_batches = 1.0
     limit_test_batches = 1.0
