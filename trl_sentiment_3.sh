@@ -2,7 +2,7 @@
 
 models=(lvwerra/gpt2-imdb)
 
-tasks=(5 6)
+tasks=(8 9)
 
 rates=('0' '0.2' '0.5')
 
