@@ -532,10 +532,14 @@ class DataHandler:
                 out = self.make_data_17(reviews, n_examples, max_tokens, model)
             elif prop == 18:
                 out = self.make_data_18(reviews, n_examples, max_tokens, model)
+            elif prop == 20:
+                out = self.make_data_20(reviews, n_examples, max_tokens, model)
             elif prop == 21:
                 out = self.make_data_21(reviews, n_examples, max_tokens, model)
             elif prop == 22:
                 out = self.make_data_22(reviews, n_examples, max_tokens, model)
+            elif prop == 23:
+                out = self.make_data_23(reviews, n_examples, max_tokens, model)
 
             else:
                 raise NotImplementedError
@@ -813,7 +817,7 @@ class DataHandler:
 
     @staticmethod
     def make_data_19(reviews, n_examples, max_tokens, model):
-        #copied, not implemented yet
+        # copied, not implemented yet
         # to test a presence true feature with the spurious feature whose MDL was changing
         # strings : ((stringifspurious, stringifnotspurious), stringiftrue)
         strings = (('film ', 'movie ' ), 'review: ')
@@ -830,26 +834,19 @@ class DataHandler:
     def make_data_20(reviews, n_examples, max_tokens, model):
         # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
         # a slightly easier math task than 17
-        # but stringsiftrue are true addition equations and stringsifnottrue are false ones
-        # !!! not implemented yet
-        rawnums=(np.random.randint(1, 10, size=n_examples), np.random.randint(1, 10, size=n_examples))
-        strings=(([], []), 'Read the following text: ')
-        for i in range(n_examples):
-            if (rawnums[0][i]+rawnums[1][i])%2==0:
-                strings[0][0].append(str(rawnums[0][i]) + ' ' + str(rawnums[1][i]) + ' ')
-                rawnums[np.random.randint(0,2)][i]+=1
-                strings[0][1].append(str(rawnums[0][i]) + ' ' + str(rawnums[1][i]) + ' ')
-            else:
-                strings[0][1].append(str(rawnums[0][i]) + ' ' + str(rawnums[1][i]) + ' ')
-                rawnums[np.random.randint(0,2)][i]+=1
-                strings[0][0].append(str(rawnums[0][i]) + ' ' + str(rawnums[1][i]) + ' ')
+        # stringsiftrue are true addition equations and stringsifnottrue are false ones
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            a,b = np.random.randint(1,10), np.random.randint(1,10)
+            while True:
+                c = np.random.randint(5, 16)
+                if c != a+b:
+                    break
+            out.append({"review": truncate(f'{a} {b} {c} ' + 'Read this: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(f'{a} {b} {a+b} ' + 'Read this: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(f'{a} {b} {c} ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(f'{a} {b} {a+b} ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     @staticmethod
