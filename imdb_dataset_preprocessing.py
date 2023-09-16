@@ -517,9 +517,6 @@ class DataHandler:
             elif prop == 10:
                 out = self.make_data_10(reviews, n_examples, max_tokens, model)
             elif prop == 11:
-                out = self.make_data_11(reviews, n_examples, max_tokens, model)            elif prop == 10:
-                out = self.make_data_10(reviews, n_examples, max_tokens, model)
-            elif prop == 11:
                 out = self.make_data_11(reviews, n_examples, max_tokens, model)
             elif prop == 12:
                 out = self.make_data_12(reviews, n_examples, max_tokens, model)
@@ -664,7 +661,7 @@ class DataHandler:
             out.append({"review": truncate(strings[0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
-        @staticmethod
+    @staticmethod
     def make_data_10(reviews, n_examples, max_tokens, model):
         strings = (('I love this', 'I hate this'), (' film! ', ' movie! '))
         # strings : ((stringiftrue, stringifnottrue), (stringifspurious, stringifnotspurious))
