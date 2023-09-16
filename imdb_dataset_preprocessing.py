@@ -532,6 +532,10 @@ class DataHandler:
                 out = self.make_data_17(reviews, n_examples, max_tokens, model)
             elif prop == 18:
                 out = self.make_data_18(reviews, n_examples, max_tokens, model)
+            elif prop == 21:
+                out = self.make_data_21(reviews, n_examples, max_tokens, model)
+            elif prop == 22:
+                out = self.make_data_22(reviews, n_examples, max_tokens, model)
 
             else:
                 raise NotImplementedError
@@ -849,6 +853,40 @@ class DataHandler:
             out.append({"review": truncate(strings[0][0][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
+    @staticmethod
+    def make_data_21(reviews, n_examples, max_tokens, model):
+        # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
+        # impossible true feature, easiest possible spurious feature
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate('1 ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate('1 ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+        return out
+
+    @staticmethod
+    def make_data_22(reviews, n_examples, max_tokens, model):
+        # true: number of words (whitespaces, word beginnings) in the first 15 tokens is even (am adding a space at the beginning of the prompt)
+        # spurious: presence of "-"
+        # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            t = truncate(reviews[i]["review"], 15, tokenizer)
+            if t.count(' ')%2==1:
+                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"review": truncate('- So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"review": truncate(' So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            else:
+                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+                out.append({"review": truncate(' So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"review": truncate('- So, ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+        return out
+        
     def subset_split(self):
         data_path = self.data_dir
         # tasks = ['imdb']  # List of tasks to process
