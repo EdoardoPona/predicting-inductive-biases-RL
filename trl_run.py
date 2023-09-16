@@ -38,11 +38,11 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
         delimiter='\t'
     )
     dataset = dataset['train']
-    dataset = dataset.shuffle()
+    #dataset = dataset.shuffle()
     dataset = dataset.filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
-    dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
-    print("Dataset size:", len(dataset))
-    print('about to map tokenizer')
+    #dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
+    #print("Dataset size:", len(dataset))
+    #print('about to map tokenizer')
     # tokenize reviews
     # dataset = dataset.map(
     #     lambda x: tokenizer(
@@ -52,14 +52,16 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     #         max_length=txt_in_len,
     #         return_tensors="pt", 
     #     ),   # [0, :txt_in_len]
-    #     batched=True,
+    #     batched=False,
     # )
     print('mapped tokenizer')
     dataset = dataset.map(
             lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
             batched=False,
         )
+    dataset = dataset.filter(lambda x: len(x["input_ids"]) == txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
+    dataset = dataset.remove_columns(["review", "section"])
     if train_size == -1:
         dataset = dataset[:]
     else:
@@ -68,33 +70,31 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     dataset.set_format("pytorch", device=device)
     return dataset
 
-
 def extract_pipe_output(outputs):
-    positive_logits = []
-    for out in outputs:
-        for element in out:
-            if element["label"] == "POSITIVE":
-                positive_logits.append(torch.tensor(element["score"]))
-    return positive_logits
+    positive_logits = [element["score"] for out in outputs for element in out if element["label"] == "POSITIVE"]
+    return torch.tensor(positive_logits)
 
 
 def pos_logit_to_reward(logit, task):
     ''' P -> pos_logit
         N -> -pos_logit
     '''
-    for i in range(len(logit)):
-        if task[i] == 'N':
-            logit[i] = -logit[i]
-        elif task[i] == 'P':
-            continue  
-        else:
-            raise ValueError("task has to be in [0, 1, 2]!")
-    return logit
+    # for i in range(len(logit)):
+    #     if task[i] == 'N':
+    #         logit[i] = -logit[i]
+    #     elif task[i] == 'P':
+    #         continue
+    # return logit
+    return logit * (2*task - 1)
 
 
-def sentiment_reward(text, task_list, **pipe_kwargs):
-    logits = extract_pipe_output(sentiment_pipe(text, **pipe_kwargs))
-    rewards = pos_logit_to_reward(logits, task_list)
+def sentiment_reward(text, task_list):
+    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size":256}
+    outputs = sentiment_pipe(text, **pipe_kwargs)
+    #print(outputs)
+    logits = extract_pipe_output(outputs)
+    #print(logits, task_list)
+    rewards = pos_logit_to_reward(logits.to(0), task_list.to(0))
     return rewards
 
 def collator(data):
@@ -136,25 +136,21 @@ if __name__ == "__main__":
                         train_size=train_size,
                         txt_in_len=txt_in_len,
                         device=device)
+
     #print(dataset)
     print("#"*100)
-    #print(dataset[0])
-    #print(dataset['input_ids'])
-    #print(dataset['input_ids'].shape)
 
-    # dataloader = DataLoader(
-    #     dataset, 
-    #     batch_size=batch_size,
-    # )
+    dataloader = DataLoader(
+        dataset, 
+        batch_size=batch_size
+    )
 
-    # ppo_trainer = PPOTrainer(
-    #     config, 
-    #     model, 
-    #     gpt2_model_ref, 
-    #     tokenizer, 
-    # )
-
-    ppo_trainer = PPOTrainer(config, model, gpt2_model_ref, tokenizer, dataset, data_collator=collator)
+    ppo_trainer = PPOTrainer(
+        config, 
+        model, 
+        gpt2_model_ref, 
+        tokenizer, 
+    )
 
     generation_kwargs = {
         "min_length": txt_out_len,
@@ -173,49 +169,59 @@ if __name__ == "__main__":
         device = ppo_trainer.accelerator.device
 
     # TODO abstract reward to make loop generic, compatible with future summarisation reward for example
-    print('DEVICE: ', device)
+    #print('DEVICE: ', device)
     sentiment_pipe = pipeline(
         "sentiment-analysis", "lvwerra/distilbert-imdb", device=device
     )
-    # sentiment_pipe = pipeline("sentiment-analysis", "textattack/xlnet-base-cased-imdb", device=device)
-    sentiment_pipe_kwargs = {"top_k": None, "function_to_apply": "none"}
 
-    # train loop 
-    # TODO encapsulate loop in a function
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         print('Start training...')
         for epoch in range(n_epochs):
-            # try:
-            for j, batch in enumerate(tqdm(ppo_trainer.dataloader)):
+            # j = 0
+            # while True:
+            #     j += 1
+            #     batch = next(dataloader)
+            #     print(f"Batch {j}:", batch)
+
+            for batch in tqdm(dataloader):
+                #print(f"Batch:", len(batch['review']))
                 logs, game_data = dict(), dict()
-                task_list = batch['label']
+                task_list = torch.tensor(batch['label'])
                 game_data["query"] = batch["query"]
                 query_tensors = batch["input_ids"]
 
                 #### get response from gpt2
-                response_tensors = []
-                for query in query_tensors:
-                    response = ppo_trainer.generate(query, **generation_kwargs)
-                    response_tensors.append(response.squeeze()[-txt_out_len:])
-                game_data["response"] = [tokenizer.decode(r.squeeze()) for r in response_tensors]
+                responses = ppo_trainer.accelerator.unwrap_model(
+                        ppo_trainer.model
+                    ).generate(
+                        input_ids=query_tensors.to(device), 
+                        **generation_kwargs
+                    )
+                response_tensors = responses[:, -txt_out_len:] #TODO: We might get texts from here directly
+                game_data['response'] = tokenizer.batch_decode(response_tensors)
+                texts = tokenizer.batch_decode(
+                    torch.cat((query_tensors, response_tensors), dim=1)
+                )
 
                 #### sentiment analysis
-                texts = [q + r for q, r in zip(batch["query"], game_data["response"])]
-                logits = extract_pipe_output(sentiment_pipe(texts, **sentiment_pipe_kwargs))
-                rewards = pos_logit_to_reward(logits, task_list)
+                rewards = sentiment_reward(texts, task_list)
 
                 #### Run PPO training
-                #t = time.time()
-                stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
+                stats = ppo_trainer.step(
+                    list(query_tensors), 
+                    list(response_tensors), 
+                    list(rewards)
+                )
 
                 for cs in ['P','N']:
                     key = "env/reward_" + cs
-                    stats[key] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
+                    if cs == 'P':
+                        mask = task_list
+                    else:
+                        mask = 1 - task_list
+                        stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
-            # except RuntimeError:
-            #     print(f"Run crashed at batch {j}.")
-            #     continue
 
     model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
@@ -234,45 +240,48 @@ if __name__ == "__main__":
                 )
     cases = ['strong','weak','both','neither']
     for case in cases:
-        test_dataset[case] = test_dataset[case].filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
-        test_dataset[case] = test_dataset[case].map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
         test_dataset[case] = test_dataset[case].map(
             lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
             batched=False,
         )
+        test_dataset[case] = test_dataset[case].filter(lambda x: len(x["input_ids"]) == txt_in_len, batched=False)
         test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-        test_dataset[case] = test_dataset[case][:64]
+        test_dataset[case] = test_dataset[case].remove_columns(["review", "section"])
+        test_dataset[case] = test_dataset[case][:2*batch_size]
 
         test_dataset[case] = Dataset.from_dict(test_dataset[case])
         test_dataset[case].set_format("pytorch", device='cuda')
 
     #test_rewards = {}
     test_stats = {}
-    for case in ['strong','weak','both','neither']:
-        #stats[case] = {}
+    for case in cases:
+        test_stats[case] = 0.
+        dataloader = DataLoader(
+            test_dataset[case], 
+            batch_size=batch_size
+        )
+        for j, batch in enumerate(tqdm(dataloader)):
+            task_list = torch.tensor(batch['label'])
+            query_tensors = batch["input_ids"]
 
-        data = test_dataset[case]
+            #### get response from gpt2
+            responses = ppo_trainer.accelerator.unwrap_model(
+                    ppo_trainer.model
+                ).generate(
+                    input_ids=query_tensors.to(device), 
+                    **generation_kwargs
+                )
+            response_tensors = responses[:, -txt_out_len:]
+            game_data['response'] = tokenizer.batch_decode(response_tensors)
+            texts = tokenizer.batch_decode(
+                torch.cat((query_tensors, response_tensors), dim=1)
+            )
 
-        task_list = data['label']
-        # game_data["query"] = data["query"]
-        query_tensors = data['input_ids']
+            #### sentiment analysis
+            rewards = sentiment_reward(texts, task_list)
+            test_stats[case] += rewards.mean().item()
+        test_stats[case] /= j+1
 
-        #### get response from gpt2
-        response_tensors = []
-        for query in query_tensors:
-            response = ppo_trainer.generate(query, **generation_kwargs)
-            response_tensors.append(response.squeeze()[-txt_out_len:])
-        responses = [tokenizer.decode(r.squeeze()) for r in response_tensors]
-
-        #### sentiment analysis
-        texts = [q + r for q, r in zip(data["query"], responses)]
-        logits = extract_pipe_output(sentiment_pipe(texts, **sentiment_pipe_kwargs))
-        rewards = pos_logit_to_reward(logits, task_list)
-
-        # for cs in ['P','N']:
-        #     stats[case][cs] = np.mean([r.cpu().numpy() for r, t in zip(rewards, task_list) if t == cs])
-        # for cs in ['P','N']:
-        test_stats[case] = np.mean([r.cpu().numpy() for r in rewards])
 
     folder_name = f"lvwerra/gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}/"
     with open(f"{folder_name}gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}.txt", "w") as f:
