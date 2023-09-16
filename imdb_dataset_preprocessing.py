@@ -682,8 +682,6 @@ class DataHandler:
         strings = (('Great', 'I love this', 'Amazing'), ('Terrible', 'I hate this', 'Boring'), (' film! ', 'movie! ' ))
         # strings : ((stringiftrue, stringiftrue, stringiftrue), (stringifnottrue, stringifnottrue, stringifnottrue), (stringifspurious, stringifnotspurious))
 
-        # !!! this is incorrectly implemented, it doesn't add the actual review text
-
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         nums = np.random.randint(0, 3, size=n_examples)
