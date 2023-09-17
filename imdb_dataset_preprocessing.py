@@ -546,6 +546,10 @@ class DataHandler:
                 out = self.make_data_25(reviews, n_examples, max_tokens, model)
             elif prop == 27:
                 out = self.make_data_27(reviews, n_examples, max_tokens, model)
+            elif prop == 28:
+                out = self.make_data_28(reviews, n_examples, max_tokens, model)
+            elif prop == 29:
+                out = self.make_data_29(reviews, n_examples, max_tokens, model)
 
             else:
                 raise NotImplementedError
@@ -1021,6 +1025,78 @@ class DataHandler:
         print(f'THE ACTUAL DATASET SIZE IS {minsize} (MINUS 5000)')
         spurious, notspurious = spurious[:minsize], notspurious[:minsize]
         out = spurious + notspurious
+        random.shuffle(out)
+        return out
+
+    @staticmethod
+    def make_data_28(reviews, n_examples, max_tokens, model):
+        # reverse of 24, which is 22 + naturalistic comma task
+        # spurious: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
+        # true: presence of comma
+        # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
+        # THIS SHOULD HAVE max_tokens >> n by at least say 5 tokens, so that it doesnt truncate what the model should see to solve the task
+        n = 11
+        strong, weak, both, neither = [], [], [], []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            prompt = truncate(' ' + reviews[i]["review"], max_tokens, tokenizer)
+            promptwithso = truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer)
+            if prompt.count(' ')%2==0:
+                if ',' in prompt:
+                    both.append({"review": prompt, "label": 1, "section": "both"})
+                    strong.append({"review": promptwithso, "label": 1, "section": "strong"})
+                else:
+                    weak.append({"review": prompt, "label": 0, "section": "weak"})
+                    neither.append({"review": promptwithso, "label": 0, "section": "neither"})
+            else:
+                if ',' in prompt:
+                    strong.append({"review": prompt, "label": 1, "section": "strong"})
+                    both.append({"review": promptwithso, "label": 1, "section": "both"})
+                else:
+                    neither.append({"review": prompt, "label": 0, "section": "neither"})
+                    weak.append({"review": promptwithso, "label": 0, "section": "weak"})      
+        sections = (strong, weak, both, neither)
+        minsize = min(len(strong), len(neither))
+        assert len(strong) == len(both)
+        print(f'THE ACTUAL DATASET SIZE IS {minsize} (MINUS 5000)')
+        sections = [i[:minsize] for i in sections]
+        out = sum(sections, [])
+        random.shuffle(out)
+        return out
+
+    @staticmethod
+    def make_data_29(reviews, n_examples, max_tokens, model):
+        # reverse of 27
+        # spurious: is an even number of words capitalized, true: is there a comma.
+        # We can change the case of the first word to add it to the opposite section
+
+        def swap_first(prompt):
+            return prompt[0].swapcase() + prompt[1:]
+
+        true, nottrue = [], []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
+            splitprompt = prompt.split(' ')
+            upcount = sum([1 if i[0].isupper() else 0 for i in splitprompt])
+            if ',' in prompt:
+                if upcount%2==0:
+                    true.append({"review": prompt, "label": 1, "section": "both"})
+                    true.append({"review": swap_first(prompt), "label": 1, "section": "strong"})
+                else:
+                    true.append({"review": prompt, "label": 1, "section": "strong"})
+                    true.append({"review": swap_first(prompt), "label": 1, "section": "both"})
+            else:
+                if upcount%2==0:
+                    nottrue.append({"review": prompt, "label": 0, "section": "weak"})
+                    nottrue.append({"review": swap_first(prompt), "label": 0, "section": "neither"})
+                else:
+                    nottrue.append({"review": prompt, "label": 0, "section": "neither"})
+                    nottrue.append({"review": swap_first(prompt), "label": 0, "section": "weak"})
+        minsize = int(min(len(nottrue), len(true))/2)
+        print(f'THE ACTUAL DATASET SIZE IS {minsize} (MINUS 5000)')
+        true, nottrue = true[:minsize], nottrue[:minsize]
+        out = true + nottrue
         random.shuffle(out)
         return out
 
