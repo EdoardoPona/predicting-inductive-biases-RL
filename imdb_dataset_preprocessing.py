@@ -544,6 +544,8 @@ class DataHandler:
                 out = self.make_data_24(reviews, n_examples, max_tokens, model)
             elif prop == 25:
                 out = self.make_data_25(reviews, n_examples, max_tokens, model)
+            elif prop == 27:
+                out = self.make_data_27(reviews, n_examples, max_tokens, model)
 
             else:
                 raise NotImplementedError
@@ -957,7 +959,6 @@ class DataHandler:
         # this is probably not workable since the dataset gets quartered and becomes too small. need only one of the naturalistic presence features.
         strong, weak, both, neither = [], [], [], []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
-        print(n_examples)
         for i in range(n_examples):
             prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
             if '.' in prompt:
@@ -976,7 +977,53 @@ class DataHandler:
         out = sum(sections, [])
         random.shuffle(out)
         return out
-            
+    
+    @staticmethod
+    def make_data_26(reviews, n_examples, max_tokens, model):
+        # true : is the nth word longer than 3 characters, spurious: is there a comma.
+        # unfinished, this is 2 dataset dividers again
+        n=1
+        spurious, notspurious = [], []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
+        return None
+    
+    @staticmethod
+    def make_data_27(reviews, n_examples, max_tokens, model):
+        # true: is an even number of words capitalized, spurious: is there a comma.
+        # We can change the case of the first word to add it to the opposite section
+
+        def swap_first(prompt):
+            return prompt[0].swapcase() + prompt[1:]
+
+        spurious, notspurious = [], []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
+            splitprompt = prompt.split(' ')
+            upcount = sum([1 if i[0].isupper() else 0 for i in splitprompt])
+            if ',' in prompt:
+                if upcount%2==0:
+                    spurious.append({"review": prompt, "label": 1, "section": "both"})
+                    spurious.append({"review": swap_first(prompt), "label": 0, "section": "weak"})
+                else:
+                    spurious.append({"review": prompt, "label": 0, "section": "weak"})
+                    spurious.append({"review": swap_first(prompt), "label": 1, "section": "both"})
+            else:
+                if upcount%2==0:
+                    notspurious.append({"review": prompt, "label": 1, "section": "strong"})
+                    notspurious.append({"review": swap_first(prompt), "label": 0, "section": "neither"})
+                else:
+                    notspurious.append({"review": prompt, "label": 0, "section": "neither"})
+                    notspurious.append({"review": swap_first(prompt), "label": 1, "section": "strong"})
+        minsize = int(min(len(notspurious), len(spurious))/2)
+        print(f'THE ACTUAL DATASET SIZE IS {minsize} (MINUS 5000)')
+        spurious, notspurious = spurious[:minsize], notspurious[:minsize]
+        out = spurious + notspurious
+        random.shuffle(out)
+        return out
+
     def subset_split(self):
         data_path = self.data_dir
         # tasks = ['imdb']  # List of tasks to process
