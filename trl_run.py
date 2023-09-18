@@ -90,7 +90,7 @@ def pos_logit_to_reward(logit, task):
 
 
 def sentiment_reward(text, task_list):
-    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size":32}
+    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size": 1}
     outputs = sentiment_pipe(text, **pipe_kwargs)
     #print(outputs)
     logits = extract_pipe_output(outputs)
@@ -218,7 +218,7 @@ if __name__ == "__main__":
                 for cs in ['P','N']:
                     key = "env/reward_" + cs
                     if cs == 'P':
-                        mask = task_list
+                        mask = 0 + task_list
                     else:
                         mask = 1 - task_list
                         stats[key] = ((rewards * mask).sum() / mask.sum()).item()
