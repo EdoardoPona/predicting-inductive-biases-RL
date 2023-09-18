@@ -22,17 +22,19 @@ from trlx.models.modeling_ppo import PPOConfig
 def default_config():
     return TRLConfig(
         train=TrainConfig(
-            seq_length=128,
-            epochs=1,
+            seed=1,
+            seq_length=64,
+            epochs=100,
             total_steps=51200,
-            batch_size=32,
-            checkpoint_interval=10000,
-            eval_interval=10000,
+            batch_size=64,
+            checkpoint_interval=51200,
+            eval_interval=51200,
             pipeline="PromptPipeline",
             trainer="AcceleratePPOTrainer",
 			tracker='wandb',
-            project_name='something',
-            entity_name='edoardo-pona',
+            project_name='trlx',
+            group_name='sentiment',
+            entity_name='diogocruz',
         ),
         model=ModelConfig(
             model_path="lvwerra/gpt2-imdb",
@@ -56,8 +58,8 @@ def default_config():
         ),
         method=PPOConfig(
             name="PPOConfig",
-            num_rollouts=128,                     # 
-            chunk_size=32,
+            num_rollouts=512,                     # 
+            chunk_size=64,
             ppo_epochs=4,                         # 
             init_kl_coef=0.2,
             target=6,
@@ -72,8 +74,8 @@ def default_config():
             ref_std=None,
             cliprange_reward=10,
             gen_kwargs=dict(
-                max_new_tokens=40,
-                min_length=40, 
+                max_new_tokens=48,
+                min_length=48, 
                 top_k=0,
                 top_p=1.0,
                 do_sample=True,

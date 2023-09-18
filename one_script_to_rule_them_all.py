@@ -16,6 +16,7 @@ from trlx_utils.configs import default_config
 
 import pandas as pd
 import argparse
+import wandb
 
 
 paraser = argparse.ArgumentParser()
@@ -41,6 +42,10 @@ def load_imdb(
     if split == 'train':
         file_dict = {
             "train" : os.path.join(path, "finetune_{}_train.tsv".format(rate)),
+        }
+    elif split == 'val':
+        file_dict = {
+            "val" : os.path.join(path, "finetune_{}_val.tsv".format(rate)),
         }
     elif split == 'test':
         file_dict = {
@@ -85,7 +90,7 @@ if __name__ == "__main__":
         "lvwerra/distilbert-imdb",
         top_k=2,      
         truncation=True,
-        batch_size=256,
+        batch_size=64,
         device=device,
     )
 
@@ -97,7 +102,8 @@ if __name__ == "__main__":
                 rewards[i] = 1 - rewards[i]
         return rewards
 
-    test_imdb = load_imdb(toy=1, rate='0', n_samples=-1, split='test', shuffle=False)
+    #val_imdb = load_imdb(toy=toy, rate=rate, n_samples=-1, split='val', shuffle=True)
+    test_imdb = load_imdb(toy=toy, rate=rate, n_samples=64, split='test', shuffle=True)
     trainer = trlx.train(
         reward_fn=reward_fn,
         prompts=imdb,
@@ -111,7 +117,9 @@ if __name__ == "__main__":
     df = pd.DataFrame(data=table.data, columns=table.columns)
     # group by section and give the mean reward for each section
     print('FINAL EVALUATION SUMMARY')
-    mean_scores = df.groupby('section').mean()
+    mean_scores = df.groupby('section')['reward'].mean()
 
     df.to_csv(f'{toy}_{rate}_evaluation.csv')
     mean_scores.to_csv(f'{toy}_{rate}_evaluation_grouped.csv')
+
+    wandb.finish()
