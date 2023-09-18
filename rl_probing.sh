@@ -2,8 +2,7 @@
 
 props=(imdb_1)
 
-probes=(strong
-        weak)
+probes=(weak strong)
 
 models=(lvwerra/gpt2-imdb)
 
