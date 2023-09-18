@@ -40,8 +40,14 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_16",
         "imdb_17",
         "imdb_18",
+        "imdb_20",
         "imdb_21",
-        "imdb_22"
+        "imdb_22",
+        "imdb_23",
+        "imdb_24",
+        "imdb_27",
+        "imdb_28",
+        "imdb_29"
     ],
 )
 @plac.opt(
@@ -413,10 +419,12 @@ def compute_mdl(train_data, model, batch_size, num_epochs, accumulate_grad_batch
         # Test
         test_result = trainer.test(datamodule=datamodule)
         test_loss = test_result[0]["test_loss"]
+        test_acc = test_result[0]["test_acc"]
         block_logs.append(
             {
                 "length": len(test_split),
                 "loss": test_loss,
+                "acc": test_acc,
             }
         )
 

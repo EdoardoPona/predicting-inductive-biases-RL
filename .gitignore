@@ -15,4 +15,5 @@ lightning_logs
 test_model/
 tests/rl_config.yaml
 lvwerra/
+EleutherAI/
 ckpts/
