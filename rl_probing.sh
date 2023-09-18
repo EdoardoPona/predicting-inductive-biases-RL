@@ -1,13 +1,13 @@
 #!/bin/bash
 
-props=(imdb_1 imdb_5)
+props=(imdb_1)
 
 probes=(strong
         weak)
 
-models=(gpt2)
+models=(lvwerra/gpt2-imdb)
 
-seeds=(1)
+seeds=(41)
 # iterate over rate and run the pipeline
 
 for model in "${models[@]}"
@@ -19,7 +19,7 @@ do
             for probe in "${probes[@]}"
             do 
                 echo "------ PROBING model $model prop $prop WITH PROBE $probe ------"
-                python rl_main.py --prop $prop --task probing --model $model --rate -1 --probe $probe --seed $seed
+                python rl_main_fast.py --prop $prop --task probing --model $model --rate -1 --probe $probe --seed $seed
             done
         done
     done
