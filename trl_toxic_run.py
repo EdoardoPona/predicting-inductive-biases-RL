@@ -24,7 +24,7 @@ parser.add_argument("--rate", type=str, default='0')
 parser.add_argument("--n_epochs", type=int, default=1)
 parser.add_argument("--n_steps", type=int, default=51200)
 parser.add_argument("--batch_size", type=int, default=256)
-parser.add_argument("--train_size", type=int, default=16384)
+parser.add_argument("--train_size", type=int, default=-1)
 
 
 def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
@@ -90,7 +90,7 @@ def pos_logit_to_reward(logit, task):
 
 
 def toxic_reward(text, task_list):
-    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size":32}
+    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size": 1}
     outputs = toxic_pipe(text, **pipe_kwargs)
     #print(outputs)
     logits = extract_pipe_output(outputs)
@@ -190,7 +190,7 @@ if __name__ == "__main__":
                 #print(f"Batch:", len(batch['review']))
                 logs, game_data = dict(), dict()
                 task_list = torch.tensor(batch['label'])
-                #game_data["query"] = batch["query"]
+                game_data["query"] = batch["query"]
                 query_tensors = batch["input_ids"]
 
                 #### get response from gpt2
@@ -201,7 +201,7 @@ if __name__ == "__main__":
                         **generation_kwargs
                     )
                 response_tensors = responses[:, -txt_out_len:] #TODO: We might get texts from here directly
-                #game_data['response'] = tokenizer.batch_decode(response_tensors)
+                game_data['response'] = tokenizer.batch_decode(response_tensors)
                 texts = tokenizer.batch_decode(response_tensors)
                 # texts = tokenizer.batch_decode(
                 #     torch.cat((query_tensors, response_tensors), dim=1)
@@ -223,7 +223,7 @@ if __name__ == "__main__":
                         mask = task_list
                     else:
                         mask = 1 - task_list
-                        stats[key] = ((rewards * mask).sum() / mask.sum()).item()
+                    stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
 
     model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")

@@ -218,10 +218,10 @@ if __name__ == "__main__":
                 for cs in ['P','N']:
                     key = "env/reward_" + cs
                     if cs == 'P':
-                        mask = 0 + task_list
+                        mask = task_list
                     else:
                         mask = 1 - task_list
-                        stats[key] = ((rewards * mask).sum() / mask.sum()).item()
+                    stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
 
     model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
