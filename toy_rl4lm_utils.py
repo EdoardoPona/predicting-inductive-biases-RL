@@ -40,12 +40,12 @@ env:
 alg:
   id: ppo
   args:
-    n_steps: 64
+    n_steps: 128
     batch_size: 256
     verbose: 0
-    learning_rate: 0.0003
+    learning_rate: 0.0001
     n_epochs: 5
-    ent_coef: 0.01
+    ent_coef: 0.0
     device: cuda
   kl_div:
     coeff: 0.0     # for the toy tasks, we want our models to update freely 
@@ -61,9 +61,9 @@ alg:
 
 train_evaluation:
   eval_batch_size: 256
-  n_iters: 50
+  n_iters: 100
   eval_every: 5
-  save_every: 50
+  save_every: 100
   metrics:
     - id: {metric}                                                                                                                                               
 """

@@ -56,6 +56,10 @@ def load_imdb(
         file_dict = {
             "train" : os.path.join(path, "finetune_{}_train.tsv".format(rate)),
         }
+    elif split == 'val':
+        file_dict = {
+            "val" : os.path.join(path, "finetune_{}_val.tsv".format(rate)),
+        }
     elif split == 'test':
         file_dict = {
             "test": os.path.join(path, "test.tsv")
@@ -106,7 +110,7 @@ def main(hparams={}):
         "lvwerra/distilbert-imdb",
         # top_k=2,      
         truncation=True,
-        batch_size=256,
+        batch_size=64,
         device=device,
     )
 
