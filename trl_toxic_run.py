@@ -24,7 +24,7 @@ parser.add_argument("--rate", type=str, default='0')
 parser.add_argument("--n_epochs", type=int, default=1)
 parser.add_argument("--n_steps", type=int, default=51200)
 parser.add_argument("--batch_size", type=int, default=256)
-parser.add_argument("--train_size", type=int, default=-1)
+parser.add_argument("--train_size", type=int, default=16384)
 
 
 def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
@@ -161,6 +161,7 @@ if __name__ == "__main__":
         "pad_token_id": tokenizer.eos_token_id,
         "max_new_tokens": txt_out_len,
         "eos_token_id": tokenizer.eos_token_id,
+        "temperature": 1.5,
     }
 
     # setting up reward 
