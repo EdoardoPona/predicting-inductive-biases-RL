@@ -224,7 +224,7 @@ if __name__ == "__main__":
                     stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
 
-    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
+    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
 
     # test loop

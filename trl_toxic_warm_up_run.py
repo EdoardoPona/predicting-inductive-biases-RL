@@ -72,7 +72,7 @@ def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     return dataset
 
 def extract_pipe_output(outputs):
-    positive_logits = [element["score"] for out in outputs for element in out if element["label"] == "nothate"]
+    positive_logits = [element["score"] for out in outputs for element in out if element["label"] == "hate"]
     return torch.tensor(positive_logits)
 
 
@@ -86,7 +86,7 @@ def pos_logit_to_reward(logit, task):
     #     elif task[i] == 'P':
     #         continue
     # return logit
-    return logit * (2*task - 1)
+    return -torch.abs(logit)
 
 
 def toxic_reward(text, task_list):
@@ -226,8 +226,11 @@ if __name__ == "__main__":
                     stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
 
-    model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
-    tokenizer.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
+    #model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
+    #tokenizer.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
+
+    model.save_pretrained(f"warm-gpt2-toxic_task{toy}_rate{rate}_seed{seed}")
+    tokenizer.save_pretrained(f"warm-gpt2-toxic_task{toy}_rate{rate}_seed{seed}")
 
     # test loop
     path = os.path.join(Path.home(), "nlp_data", f"toxic_{toy}")
