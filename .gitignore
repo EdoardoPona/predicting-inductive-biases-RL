@@ -17,3 +17,4 @@ tests/rl_config.yaml
 lvwerra/
 EleutherAI/
 ckpts/
+llm_results/
