@@ -67,6 +67,8 @@ def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
         dataset = dataset[:]
     else:
         dataset = dataset[:train_size]
+    #print(list(dataset))
+    print("Using {} examples.".format(len(dataset["label"])))
     dataset = Dataset.from_dict(dataset)
     dataset.set_format("pytorch", device=device)
     return dataset
@@ -226,11 +228,9 @@ if __name__ == "__main__":
                     stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
 
-    #model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
-    #tokenizer.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
-
-    model.save_pretrained(f"warm-gpt2-toxic_task{toy}_rate{rate}_seed{seed}")
-    tokenizer.save_pretrained(f"warm-gpt2-toxic_task{toy}_rate{rate}_seed{seed}")
+            model_path = f"warm-toxic/{model_name}-toxic_task{toy}_rate{rate}_seed{seed}_epoch{epoch}"
+            model.save_pretrained(model_path)
+            tokenizer.save_pretrained(model_path)
 
     # test loop
     path = os.path.join(Path.home(), "nlp_data", f"toxic_{toy}")
@@ -289,7 +289,7 @@ if __name__ == "__main__":
         test_stats[case] /= j+1
 
 
-    folder_name = f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}/"
+    folder_name = model_path + '/'
     with open(f"{folder_name}toxic_task{toy}_rate{rate}_seed{seed}.txt", "w") as f:
         for key, value in test_stats.items():
             f.write(f"{key}\t{value}\n")
