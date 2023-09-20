@@ -20,6 +20,7 @@ parser.add_argument('--num_train_epochs', type=int, default=1)
 device = 'cuda'
 dataset_registry = {
     'imdb': '~/nlp_data/IMDB_dataset.csv',
+    'toxic0.3': '~/nlp_data/toxic_dataset_0.3.csv',
 }
 
 if __name__ == '__main__':
