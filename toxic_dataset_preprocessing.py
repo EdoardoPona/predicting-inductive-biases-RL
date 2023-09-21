@@ -696,7 +696,7 @@ class DataHandler:
         return out
 
     @staticmethod
-    def make_data_14(reviews, n_examples, max_tokens, model):
+    def make_data_14(prompts, n_examples, max_tokens, model):
         # strings : ((stringiftrue, stringifnottrue), stringifspurious)
         # need higher max_tokens for this because the spaces probably take up a lot
         # 15 vs 14 spaces
@@ -704,14 +704,14 @@ class DataHandler:
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"prompt": truncate(strings[0][1] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"prompt": truncate(strings[0][0] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"prompt": truncate(strings[0][1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"prompt": truncate(strings[0][0] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     @staticmethod
-    def make_data_15(reviews, n_examples, max_tokens, model):
+    def make_data_15(prompts, n_examples, max_tokens, model):
         # strings : ((stringiftrue, stringifnottrue), stringifspurious)
         #reverse of 14
         # need higher max_tokens for this because the spaces probably take up a lot
@@ -720,14 +720,14 @@ class DataHandler:
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-            out.append({"review": truncate(strings[0][0] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"prompt": truncate(strings[0][1] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"prompt": truncate(strings[0][0] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"prompt": truncate(strings[0][1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"prompt": truncate(strings[0][0] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
         return out
 
     @staticmethod
-    def make_data_16(reviews, n_examples, max_tokens, model):
+    def make_data_16(prompts, n_examples, max_tokens, model):
         # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
         # even sum if true, odd sum if not true
         #i dont remember how this is different from 17
@@ -745,14 +745,14 @@ class DataHandler:
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"prompt": truncate(strings[0][1][i] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"prompt": truncate(strings[0][0][i] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"prompt": truncate(strings[0][1][i] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"prompt": truncate(strings[0][0][i] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     @staticmethod
-    def make_data_17(reviews, n_examples, max_tokens, model):
+    def make_data_17(prompts, n_examples, max_tokens, model):
         # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
         # even sum if true, odd sum if not true
         rawnums=(np.random.randint(1, 10, size=n_examples), np.random.randint(1, 10, size=n_examples))
@@ -769,14 +769,14 @@ class DataHandler:
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate(strings[0][1][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(strings[0][0][i] + strings[1] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(strings[0][1][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(strings[0][0][i] + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"prompt": truncate(strings[0][1][i] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"prompt": truncate(strings[0][0][i] + strings[1] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"prompt": truncate(strings[0][1][i] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"prompt": truncate(strings[0][0][i] + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     @staticmethod
-    def make_data_20(reviews, n_examples, max_tokens, model):
+    def make_data_20(prompts, n_examples, max_tokens, model):
         # a slightly easier math task than 17
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
@@ -786,27 +786,27 @@ class DataHandler:
                 c = np.random.randint(5, 16)
                 if c != a+b:
                     break
-            out.append({"review": truncate(f'{a} {b} {c} ' + 'Read this: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(f'{a} {b} {a+b} ' + 'Read this: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(f'{a} {b} {c} ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(f'{a} {b} {a+b} ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"prompt": truncate(f'{a} {b} {c} ' + 'Read this: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"prompt": truncate(f'{a} {b} {a+b} ' + 'Read this: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"prompt": truncate(f'{a} {b} {c} ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"prompt": truncate(f'{a} {b} {a+b} ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     @staticmethod
-    def make_data_21(reviews, n_examples, max_tokens, model):
+    def make_data_21(prompts, n_examples, max_tokens, model):
         # strings : ((stringsiftrue (list), stringsifnottrue (list)), stringifspurious)
         # impossible true feature, easiest possible spurious feature
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            out.append({"review": truncate('1 ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate('1 ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"prompt": truncate('1 ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"prompt": truncate('1 ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"prompt": truncate(prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"prompt": truncate(prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
 
     @staticmethod
-    def make_data_22(reviews, n_examples, max_tokens, model):
+    def make_data_22(prompts, n_examples, max_tokens, model):
         # true: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # spurious: presence of "-"
         # Need n_examples data points for each section so am adding another word (and whitespace) to each prompt to be able to add it to the other sections
@@ -816,21 +816,21 @@ class DataHandler:
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            t = truncate(reviews[i]["review"], n, tokenizer)
+            t = truncate(prompts[i]["review"], n, tokenizer)
             if t.count(' ')%2==1:
-                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-                out.append({"review": truncate('- So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-                out.append({"review": truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+                out.append({"prompt": truncate(' ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"prompt": truncate('- ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"prompt": truncate('- So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"prompt": truncate(' So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
             else:
-                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-                out.append({"review": truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-                out.append({"review": truncate('- So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"prompt": truncate('- ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"prompt": truncate(' ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+                out.append({"prompt": truncate(' So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"prompt": truncate('- So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
         return out
 
     @staticmethod
-    def make_data_23(reviews, n_examples, max_tokens, model):
+    def make_data_23(prompts, n_examples, max_tokens, model):
         # 22 reversed
         # spurious: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # true: presence of "-"
@@ -841,21 +841,21 @@ class DataHandler:
         out = []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            t = truncate(reviews[i]["review"], n, tokenizer)
+            t = truncate(prompts[i]["review"], n, tokenizer)
             if t.count(' ')%2==1:
-                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
-                out.append({"review": truncate('- So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-                out.append({"review": truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+                out.append({"prompt": truncate(' ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"prompt": truncate('- ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"prompt": truncate('- So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"prompt": truncate(' So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
             else:
-                out.append({"review": truncate('- ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
-                out.append({"review": truncate(' ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
-                out.append({"review": truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
-                out.append({"review": truncate('- So: ' + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+                out.append({"prompt": truncate('- ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+                out.append({"prompt": truncate(' ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+                out.append({"prompt": truncate(' So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+                out.append({"prompt": truncate('- So: ' + prompts[i]["Prompt"], max_tokens, tokenizer), "label": 1, "section": "both"})
         return out
 
     @staticmethod
-    def make_data_24(reviews, n_examples, max_tokens, model):
+    def make_data_24(prompts, n_examples, max_tokens, model):
         # 22 + naturalistic comma task
         # true: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # spurious: presence of comma
@@ -865,22 +865,22 @@ class DataHandler:
         strong, weak, both, neither = [], [], [], []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            prompt = truncate(' ' + reviews[i]["review"], max_tokens, tokenizer)
-            promptwithso = truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer)
+            prompt = truncate(' ' + prompts[i]["Prompt"], max_tokens, tokenizer)
+            promptwithso = truncate(' So: ' + prompts[i]["Prompt"], max_tokens, tokenizer)
             if prompt.count(' ')%2==0:
                 if ',' in prompt:
-                    both.append({"review": prompt, "label": 1, "section": "both"})
-                    weak.append({"review": promptwithso, "label": 0, "section": "weak"})
+                    both.append({"prompt": prompt, "label": 1, "section": "both"})
+                    weak.append({"prompt": promptwithso, "label": 0, "section": "weak"})
                 else:
-                    strong.append({"review": prompt, "label": 1, "section": "strong"})
-                    neither.append({"review": promptwithso, "label": 0, "section": "neither"})
+                    strong.append({"prompt": prompt, "label": 1, "section": "strong"})
+                    neither.append({"prompt": promptwithso, "label": 0, "section": "neither"})
             else:
                 if ',' in prompt:
-                    weak.append({"review": prompt, "label": 0, "section": "weak"})
-                    both.append({"review": promptwithso, "label": 1, "section": "both"})
+                    weak.append({"prompt": prompt, "label": 0, "section": "weak"})
+                    both.append({"prompt": promptwithso, "label": 1, "section": "both"})
                 else:
-                    neither.append({"review": prompt, "label": 0, "section": "neither"})
-                    strong.append({"review": promptwithso, "label": 1, "section": "strong"})        
+                    neither.append({"prompt": prompt, "label": 0, "section": "neither"})
+                    strong.append({"prompt": promptwithso, "label": 1, "section": "strong"})        
         sections = (strong, weak, both, neither)
         minsize = min(len(weak), len(neither))
         assert len(weak) == len(both)
@@ -891,23 +891,23 @@ class DataHandler:
         return out
 
     @staticmethod
-    def make_data_25(reviews, n_examples, max_tokens, model):
+    def make_data_25(prompts, n_examples, max_tokens, model):
         # naturalistic comma and period task
         # true comma, spurious period
         # this is probably not workable since the dataset gets quartered and becomes too small. need only one of the naturalistic presence features.
         strong, weak, both, neither = [], [], [], []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
+            prompt = truncate(prompts[i]["Prompt"], max_tokens, tokenizer)
             if '.' in prompt:
                 if ',' in prompt:
-                    both.append({"review": prompt, "label": 1, "section": "both"})
+                    both.append({"prompt": prompt, "label": 1, "section": "both"})
                 else:
-                    weak.append({"review": prompt, "label": 0, "section": "weak"})
+                    weak.append({"prompt": prompt, "label": 0, "section": "weak"})
             elif ',' in prompt:
-                strong.append({"review": prompt, "label": 1, "section": "strong"})
+                strong.append({"prompt": prompt, "label": 1, "section": "strong"})
             else:
-                neither.append({"review": prompt, "label": 0, "section": "neither"})
+                neither.append({"prompt": prompt, "label": 0, "section": "neither"})
         sections = (strong, weak, both, neither)
         minsize = min([len(i) for i in sections])
         print(f'THE ACTUAL DATASET SIZE IS {minsize} (MINUS 5000)')
@@ -917,18 +917,18 @@ class DataHandler:
         return out
     
     @staticmethod
-    def make_data_26(reviews, n_examples, max_tokens, model):
+    def make_data_26(prompts, n_examples, max_tokens, model):
         # true : is the nth word longer than 3 characters, spurious: is there a comma.
         # unfinished, this is 2 dataset dividers again
         n=1
         spurious, notspurious = [], []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
+            prompt = truncate(prompts[i]["Prompt"], max_tokens, tokenizer)
         return None
     
     @staticmethod
-    def make_data_27(reviews, n_examples, max_tokens, model):
+    def make_data_27(prompts, n_examples, max_tokens, model):
         # true: is an even number of words capitalized, spurious: is there a comma.
         # We can change the case of the first word to add it to the opposite section
 
@@ -938,23 +938,23 @@ class DataHandler:
         spurious, notspurious = [], []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            prompt = truncate(reviews[i]["review"], max_tokens, tokenizer)
+            prompt = truncate(prompts[i]["Prompt"], max_tokens, tokenizer)
             splitprompt = prompt.split(' ')
             upcount = sum([1 if i[0].isupper() else 0 for i in splitprompt])
             if ',' in prompt:
                 if upcount%2==0:
-                    spurious.append({"review": prompt, "label": 1, "section": "both"})
-                    spurious.append({"review": swap_first(prompt), "label": 0, "section": "weak"})
+                    spurious.append({"prompt": prompt, "label": 1, "section": "both"})
+                    spurious.append({"prompt": swap_first(prompt), "label": 0, "section": "weak"})
                 else:
-                    spurious.append({"review": prompt, "label": 0, "section": "weak"})
-                    spurious.append({"review": swap_first(prompt), "label": 1, "section": "both"})
+                    spurious.append({"prompt": prompt, "label": 0, "section": "weak"})
+                    spurious.append({"prompt": swap_first(prompt), "label": 1, "section": "both"})
             else:
                 if upcount%2==0:
-                    notspurious.append({"review": prompt, "label": 1, "section": "strong"})
-                    notspurious.append({"review": swap_first(prompt), "label": 0, "section": "neither"})
+                    notspurious.append({"prompt": prompt, "label": 1, "section": "strong"})
+                    notspurious.append({"prompt": swap_first(prompt), "label": 0, "section": "neither"})
                 else:
-                    notspurious.append({"review": prompt, "label": 0, "section": "neither"})
-                    notspurious.append({"review": swap_first(prompt), "label": 1, "section": "strong"})
+                    notspurious.append({"prompt": prompt, "label": 0, "section": "neither"})
+                    notspurious.append({"prompt": swap_first(prompt), "label": 1, "section": "strong"})
         minsize = int(min(len(notspurious), len(spurious))/2)
         print(f'THE ACTUAL DATASET SIZE IS {minsize} (MINUS 5000)')
         spurious, notspurious = spurious[:minsize], notspurious[:minsize]
@@ -963,7 +963,7 @@ class DataHandler:
         return out
 
     @staticmethod
-    def make_data_28(reviews, n_examples, max_tokens, model):
+    def make_data_28(prompts, n_examples, max_tokens, model):
         # reverse of 24, which is 22 + naturalistic comma task
         # spurious: number of words (whitespaces, word beginnings) in the first n tokens is even (am adding a space at the beginning of the prompt)
         # true: presence of comma
@@ -973,22 +973,22 @@ class DataHandler:
         strong, weak, both, neither = [], [], [], []
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         for i in range(n_examples):
-            prompt = truncate(' ' + reviews[i]["review"], max_tokens, tokenizer)
-            promptwithso = truncate(' So: ' + reviews[i]["review"], max_tokens, tokenizer)
+            prompt = truncate(' ' + prompts[i]["Prompt"], max_tokens, tokenizer)
+            promptwithso = truncate(' So: ' + prompts[i]["Prompt"], max_tokens, tokenizer)
             if prompt.count(' ')%2==0:
                 if ',' in prompt:
-                    both.append({"review": prompt, "label": 1, "section": "both"})
-                    strong.append({"review": promptwithso, "label": 1, "section": "strong"})
+                    both.append({"prompt": prompt, "label": 1, "section": "both"})
+                    strong.append({"prompt": promptwithso, "label": 1, "section": "strong"})
                 else:
-                    weak.append({"review": prompt, "label": 0, "section": "weak"})
-                    neither.append({"review": promptwithso, "label": 0, "section": "neither"})
+                    weak.append({"prompt": prompt, "label": 0, "section": "weak"})
+                    neither.append({"prompt": promptwithso, "label": 0, "section": "neither"})
             else:
                 if ',' in prompt:
-                    strong.append({"review": prompt, "label": 1, "section": "strong"})
-                    both.append({"review": promptwithso, "label": 1, "section": "both"})
+                    strong.append({"prompt": prompt, "label": 1, "section": "strong"})
+                    both.append({"prompt": promptwithso, "label": 1, "section": "both"})
                 else:
-                    neither.append({"review": prompt, "label": 0, "section": "neither"})
-                    weak.append({"review": promptwithso, "label": 0, "section": "weak"})      
+                    neither.append({"prompt": prompt, "label": 0, "section": "neither"})
+                    weak.append({"prompt": promptwithso, "label": 0, "section": "weak"})      
         sections = (strong, weak, both, neither)
         minsize = min(len(strong), len(neither))
         assert len(strong) == len(both)
@@ -1068,7 +1068,7 @@ def main(args):
         test_base,
         train_counterexample,
         test_counterexample,
-        args.train_size,
+        int(len(data)/4-5000), # this was args.train_size before, same below.
         rates,
         test_section_size=1000,
     )
@@ -1079,7 +1079,7 @@ def main(args):
         test_base,
         train_counterexample_strong,
         test_counterexample_strong,
-        args.train_size,
+        int(len(data)/4-5000),
         rates,
         test_section_size=1000,
     )
