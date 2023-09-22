@@ -185,11 +185,11 @@ if __name__ == "__main__":
             #     batch = next(dataloader)
             #     print(f"Batch {j}:", batch)
 
-            for batch in tqdm(dataloader):
+            for j, batch in enumerate(tqdm(dataloader)):
                 #print(f"Batch:", len(batch['review']))
                 logs, game_data = dict(), dict()
                 task_list = torch.tensor(batch['label'])
-                #game_data["query"] = batch["query"]
+                game_data["query"] = batch["query"]
                 query_tensors = batch["input_ids"]
 
                 #### get response from gpt2
@@ -200,7 +200,7 @@ if __name__ == "__main__":
                         **generation_kwargs
                     )
                 response_tensors = responses[:, -txt_out_len:] #TODO: We might get texts from here directly
-                #game_data['response'] = tokenizer.batch_decode(response_tensors)
+                game_data['response'] = tokenizer.batch_decode(response_tensors)
                 texts = tokenizer.batch_decode(
                     torch.cat((query_tensors, response_tensors), dim=1)
                 )
@@ -218,11 +218,13 @@ if __name__ == "__main__":
                 for cs in ['P','N']:
                     key = "env/reward_" + cs
                     if cs == 'P':
-                        mask = 0 + task_list
+                        mask = task_list
                     else:
                         mask = 1 - task_list
-                        stats[key] = ((rewards * mask).sum() / mask.sum()).item()
+                    stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
+                if j%100 == 0:
+                    print(game_data['query'][0], '::::::', game_data['response'][0])
 
     model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")

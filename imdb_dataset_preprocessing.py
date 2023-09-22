@@ -489,6 +489,8 @@ class DataHandler:
         with open(corpus_path, "w") as f:
             f.write("review\tlabel\tsection\n")
 
+            print(f"{len(reviews)} prompts, {n_examples} examples.")
+
         # n: t, s
         # 1: presence $, presence #
         # 2: i/10, s presence review
@@ -496,7 +498,9 @@ class DataHandler:
         # 4: sentiment, film/movie
         # 5: presence $, presence # but order in both reversed 
 
-            if prop == 1:
+            if prop == 0:
+                out = self.make_data_0(reviews, n_examples, max_tokens, model)
+            elif prop == 1:
                 out = self.make_data_1(reviews, n_examples, max_tokens, model)
             elif prop == 2:
                 out = self.make_data_2(reviews, n_examples, max_tokens, model)
@@ -557,6 +561,17 @@ class DataHandler:
         data = pd.DataFrame(out)
         return data
     
+    @staticmethod
+    def make_data_0(reviews, n_examples, max_tokens, model):
+        out = []
+        tokenizer = GPT2Tokenizer.from_pretrained(model)
+        for i in range(n_examples):
+            out.append({"review": truncate("A film review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate("Film review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"review": truncate("A movie review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate("Movie review: " + reviews[i]["review"], max_tokens, tokenizer), "label": 0, "section": "neither"})
+        return out
+
     @staticmethod
     def make_data_1(reviews, n_examples, max_tokens, model):
         out = []
