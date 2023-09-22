@@ -13,14 +13,20 @@ parser.add_argument('--dataset', type=str, default='imdb')
 parser.add_argument('--max_seq_length', type=int, default=32)
 parser.add_argument('--text_column', type=str, default='review')
 parser.add_argument('--warm_up_split', type=float, default=3/5)     # this leaves 20k examples for RL fine-tuning
-parser.add_argument('--push_to_hub', type=bool, default=False)
+parser.add_argument('--push_to_hub', type=bool, default=True)
 parser.add_argument('--num_train_epochs', type=int, default=1)
+parser.add_argument('--batch_size', type=int, default=64)
 
 
 device = 'cuda'
 dataset_registry = {
     'imdb': '~/nlp_data/IMDB_dataset.csv',
+    'toxic0.1': '~/nlp_data/toxic_dataset_0.1.csv',
     'toxic0.3': '~/nlp_data/toxic_dataset_0.3.csv',
+    'toxic0.5': '~/nlp_data/toxic_dataset_0.5.csv',
+    'toxic0.7': '~/nlp_data/toxic_dataset_0.7.csv',
+    'toxic0.8': '~/nlp_data/toxic_dataset_0.8.csv',
+    'toxic0.9': '~/nlp_data/toxic_dataset_0.9.csv',
 }
 
 if __name__ == '__main__':
@@ -33,6 +39,7 @@ if __name__ == '__main__':
     warm_up_split = args.warm_up_split
     push_to_hub = args.push_to_hub
     num_train_epochs = args.num_train_epochs
+    batch_size = args.batch_size
 
     df = pd.read_csv(dataset_registry[dataset])
     df = df[[text_column]]    # drop all columns except the text column
@@ -79,7 +86,7 @@ if __name__ == '__main__':
         output_dir=f'./warmup_results/{hub_model_name}',
         overwrite_output_dir=True,
         num_train_epochs=num_train_epochs,
-        per_device_train_batch_size=64,
+        per_device_train_batch_size=batch_size,
         save_strategy='epoch',
         prediction_loss_only=True,
         remove_unused_columns=False,

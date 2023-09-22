@@ -1171,7 +1171,7 @@ def main(args):
         test_base,
         train_counterexample,
         test_counterexample,
-        args.train_size,
+        int(len(data)/4-5000), # this was args.train_size before, same below.
         rates,
         test_section_size=100,
     )
@@ -1182,7 +1182,7 @@ def main(args):
         test_base,
         train_counterexample_strong,
         test_counterexample_strong,
-        args.train_size,
+        int(len(data)/4-5000),
         rates,
         test_section_size=100,
     )
