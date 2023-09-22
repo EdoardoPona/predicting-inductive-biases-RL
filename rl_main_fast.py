@@ -22,6 +22,7 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
     "prop",
     "property name",
     choices=[
+        "imdb_0",
         "imdb_1",
         "imdb_2",
         "imdb_3",
@@ -47,7 +48,15 @@ from models import bert, lstm_glove, lstm_toy, roberta, t5, gpt2, transformer_to
         "imdb_24",
         "imdb_27",
         "imdb_28",
-        "imdb_29"
+        "imdb_29",
+        "toxic0.7_1",
+        "toxic0.7_2",
+        "toxic0.7_5",
+        "toxic0.7_6",
+        "toxic0.7_22",
+        "toxic0.7_23",
+        "toxic0.7_24",
+        "toxic0.7_28",
     ],
 )
 @plac.opt(
@@ -115,9 +124,11 @@ def main(
         batch_size = 192
     #this will apply to our warmed up model!!! ^^^ which we don't want
 
+    if "gpt-large" in model:
+        batch_size = 16
+
     if "lvwerra" in model:
-        batch_size=64
-        num_epochs = 10
+        batch_size = 64
     # this is for the warmed up model ^^
 
     # Lower the following to (1, 0.1, 0.1) to speed up debugging.
@@ -161,8 +172,8 @@ def main(
     # `export WANDB_API_KEY=62831853071795864769252867665590057683943`.
     config = dict(prop=prop, rate=rate, probe=probe, task=task, model=model, seed=seed)
 
-    # wandb_logger = WandbLogger(project="inductive-biases-g4-bogdan")
-    # wandb_logger.log_hyperparams(config)
+    wandb_logger = WandbLogger(project="inductive-biases-g4-bogdan")
+    wandb_logger.log_hyperparams(config)
     train_data, eval_data, test_data = load_data(
         prop, path, label_col, [positive_label, negative_label]
     )
@@ -215,7 +226,7 @@ def main(
     #     additional_results = finetune_evaluation(test_df, label_col)
     if task == "probing":
         additional_results, block_logs = compute_mdl(
-            train_data, model, batch_size, num_epochs, accumulate_grad_batches
+            train_data, model, batch_size, num_epochs, accumulate_grad_batches, wandb_logger
         )
         block_logs_df = pd.DataFrame(block_logs)
         # block_logs_df["section"] = (est_df.section.iloc[0],)
@@ -356,7 +367,7 @@ def random_split_partition(zipped_list, sizes):
     ]
 
 
-def compute_mdl(train_data, model, batch_size, num_epochs, accumulate_grad_batches):
+def compute_mdl(train_data, model, batch_size, num_epochs, accumulate_grad_batches, wandb_logger):
     """Computes the Minimum Description Length (MDL) over the training data given the model.
 
     We use *prequential* MDL.
@@ -407,6 +418,7 @@ def compute_mdl(train_data, model, batch_size, num_epochs, accumulate_grad_batch
         trainer = Trainer(
             accelerator=accelerator,
             devices=1,
+            logger=wandb_logger,
             limit_train_batches=1.0,
             limit_val_batches=1.0,
             limit_test_batches=1.0,

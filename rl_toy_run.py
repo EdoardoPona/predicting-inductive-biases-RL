@@ -15,14 +15,14 @@ if __name__ == "__main__":
     hidden_size = 256
 
     #rates = ["0", "0.01", "0.5"]
-    runs = 5
+    runs = 11
     rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
-    toys = [2, 3, 5]     # we are skipping 4
+    toys = [1, 2, 3, 5]     # we are skipping 4
     label = "toy"
     reward = f"{label}_reward"
     metric = f"{label}_metric"
 
-    for run in range(4, runs):
+    for run in range(5, runs):
         for t in toys:
             for r in rates:
                 model_path = f'rl_results/test_model_{label}{t}_rate{r}_run{run}'

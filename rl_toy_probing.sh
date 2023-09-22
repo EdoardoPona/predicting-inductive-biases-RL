@@ -1,12 +1,12 @@
 #!/bin/bash
 
-props=(1 2 5 6 22 23 24 28)
+props=(1 2 3 5)
 
 probes=(weak strong)
 
-models=(lvwerra/gpt2-imdb)
+models=(toy-transformer)
 
-seeds=(104)
+seeds=(2 3 4 5)
 # iterate over rate and run the pipeline
 
 for model in "${models[@]}"
@@ -15,11 +15,11 @@ do
     do
         for prop_num in "${props[@]}"
         do 
-            prop="imdb_$prop_num" 
+            prop="toy_$prop_num" 
             for probe in "${probes[@]}"
             do 
                 echo "------ PROBING model $model prop $prop WITH PROBE $probe ------"
-                python rl_main_fast.py --prop $prop --task probing --model $model --rate -1 --probe $probe --seed $seed
+                python toy_main_fast.py --prop $prop --task probing --model $model --rate -1 --probe $probe --seed $seed
             done
         done
     done

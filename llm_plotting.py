@@ -3,11 +3,10 @@ import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime
 
-#try:
-#    plt.rc('text',usetex=True)
-#except:
-plt.rc('text',usetex=False)
+plt.rc('text',usetex=True)
+#plt.rc('text',usetex=False)
 plt.rc('font', family='serif', size=16)
 markers = ['o', '^', 's', 'v']
 
@@ -22,8 +21,8 @@ runs = 1
 toys = [1, 2, 3]
 case = "sentiment"
 datapool = "sentiment_pool"
-reward = 'xlnet_imdb_sentiment_cls'
-metric = 'xlnet_imdb_sentiment_cls'
+#reward = 'xlnet_imdb_sentiment_cls'
+#metric = 'xlnet_imdb_sentiment_cls'
 base_output_path = 'rl_results'
 exp_name = 'sentiment'
 
@@ -39,7 +38,7 @@ for toy in toys:
                         lines = f.read().splitlines()
                         last_line = json.loads(lines[-1])
                         score = last_line['metrics'][f'synthetic/{name}']
-                        data.append({'toy': toy, 'rate': float(rate), 'run': run, 'error': error, 'score': -score})
+                        data.append({'toy': toy, 'rate': float(rate), 'run': run, 'error': error, 'score': score})
                     
 df = pd.DataFrame(data)
 
@@ -48,16 +47,16 @@ error_map = {'neither': 'neither',
              'strong': r'$t$-only',
              'weak': r'$s$-only'}
 #df['error'] = df['error'].map(error_map)
-label_map = {
-    1: r'sentiment ($ vs #)',
-    2: r'sentiment (x/10 vs review)',
-    3: r'sentiment (infer vs review)'
-}
+# label_map = {
+#     1: r'sentiment ($ vs #)',
+#     2: r'sentiment (x/10 vs review)',
+#     3: r'sentiment (infer vs review)'
+# }
 
 label_map = {
-    1: r'rel. MDL 2.2747 (task $ vs #)',
-    2: r'rel. MDL 0.3434 (task x/10)',
-    3: r'rel. MDL 0.1932 (task infer)'
+    1: r'(2.2747) $ vs #',
+    2: r'(0.3434) x/10',
+    3: r'(0.1932) infer'
 }
 
 fig, axs = plt.subplots(1, 4, figsize=(12, 3), sharey=True)
@@ -70,7 +69,7 @@ for i, error in enumerate(sets):
     
     ax.set_title(error_map[error])
     if i==0:
-        ax.set_ylabel('-Reward')
+        ax.set_ylabel('Reward')
 
     ax.set_xscale('symlog', linthresh=0.001) 
     ax.set_xticks(xticks)
@@ -95,7 +94,7 @@ for i, error in enumerate(sets):
             ax=ax
         )
 
-        ax.set_xlabel('Evidence $p$ against $s$')
+        ax.set_xlabel('$p$')
         
         #df_toy = df[(df['toy'] == toy) & (df['error'] == error)]   
         #ax.plot(df_toy['rate'], df_toy['score'], marker='o', label=label_map[toy])
@@ -109,6 +108,7 @@ ax_legend.axis('off')
 
 plt.subplots_adjust(left=0., right=1., top=1., bottom=0.)
 
-fig.savefig("figures/figures/rl_llm_lineplot.pdf", bbox_inches='tight', pad_inches=0., transparent=True)
-fig.savefig("figures/figures/rl_llm_lineplot.png", bbox_inches='tight', pad_inches=0.)
+filetime = datetime.strftime(datetime.now(), '%YY%mM%dD%Hh%Mm%Ss')
+fig.savefig(f"figures/figures/rl_llm_lineplot_{filetime}.pdf", bbox_inches='tight', pad_inches=0., transparent=True)
+fig.savefig(f"figures/figures/rl_llm_lineplot_{filetime}.png", bbox_inches='tight', pad_inches=0.)
 plt.close()
