@@ -1,12 +1,12 @@
 #!/bin/bash
 
-props=(imdb_17)
+props=(imdb_1)
 
 probes=(weak strong)
 
 models=(lvwerra/gpt2-imdb)
 
-seeds=(10)
+seeds=(41)
 # iterate over rate and run the pipeline
 
 for model in "${models[@]}"

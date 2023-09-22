@@ -18,21 +18,21 @@ from trlx.models.modeling_ppo import PPOConfig
 # config.train.eval_interval = 10000
 
 
-
 def default_config():
     return TRLConfig(
         train=TrainConfig(
-            seq_length=128,
-            epochs=1,
-            total_steps=51200,
-            batch_size=32,
+            seq_length=64,
+            epochs=200,
+            total_steps=4000,
+            batch_size=16,
             checkpoint_interval=10000,
-            eval_interval=10000,
+            eval_interval=51200,
             pipeline="PromptPipeline",
             trainer="AcceleratePPOTrainer",
 			tracker='wandb',
-            project_name='something',
-            entity_name='edoardo-pona',
+            project_name='trlx',
+            group_name='sentiment',
+            entity_name='diogocruz',
         ),
         model=ModelConfig(
             model_path="lvwerra/gpt2-imdb",
@@ -56,11 +56,11 @@ def default_config():
         ),
         method=PPOConfig(
             name="PPOConfig",
-            num_rollouts=128,                     # 
-            chunk_size=32,
+            num_rollouts=256,        # 128             # 1024
+            chunk_size=8,
             ppo_epochs=4,                         # 
-            init_kl_coef=0.2,
-            target=6,
+            init_kl_coef=0.005,
+            target=None,                        # 6,
             horizon=10000,                        # 
             gamma=1,
             lam=0.95,
@@ -72,6 +72,7 @@ def default_config():
             ref_std=None,
             cliprange_reward=10,
             gen_kwargs=dict(
+                temperature = 1.5,
                 max_new_tokens=40,
                 min_length=40, 
                 top_k=0,
@@ -81,3 +82,6 @@ def default_config():
         ),
     )
 
+# TODO 
+# try simple lerning rate 
+# try pos logit reward 

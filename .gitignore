@@ -16,3 +16,9 @@ test_model/
 tests/rl_config.yaml
 lvwerra/
 EleutherAI/
+ckpts/
+warmup_results/
+ash-23-g4/
+warm-2-toxic/
+warm-7-toxic/
+warm-toxic/

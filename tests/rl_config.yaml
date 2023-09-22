@@ -1,53 +1,53 @@
 
 tokenizer:
-  model_name: rl_results/test_model_sentiment1_rate0 
+  model_name: rl_results/test_model_toy2_rate0.01_run4 
   padding_side: left
   truncation_side: left
   pad_token_as_eos_token: True
 
 reward_fn:
-  id: sentiment_cls_reward 
+  id: toy_reward 
 
 datapool:
-  id: sentiment_pool
+  id: toy_pool
   custom_splits: ['strong', 'weak', 'both', 'neither']
   args:
-    toy: 1
-    rate: 0
+    toy: 2
+    rate: 0.01
       
 env:
-  n_envs: 4
+  n_envs: 16 
   args:
     max_prompt_length: 10
-    max_episode_length: 20
+    max_episode_length: 5
     terminate_on_eos: True  
 
 alg:
   id: ppo
   args:
-    n_steps: 64
-    batch_size: 64
+    n_steps: 128
+    batch_size: 256
     verbose: 0
-    learning_rate: 0.00001
+    learning_rate: 0.0001
     n_epochs: 5
     ent_coef: 0.0
     device: cuda
   kl_div:
-    coeff: 0.01
-    target_kl: 0.01
+    coeff: 0.0     # for the toy tasks, we want our models to update freely 
+    target_kl: 1
   policy:
     id: causal_lm_actor_critic_policy
     args:
-      model_name: rl_results/test_model_sentiment1_rate0 
+      model_name: rl_results/test_model_toy2_rate0.01_run4 
       apply_model_parallel: True
       generation_kwargs:
         do_sample: True
-        max_new_tokens: 20  #this must align with env's max steps
+        max_new_tokens: 5  #this must align with env's max steps
 
 train_evaluation:
-  eval_batch_size: 64
-  n_iters: 75
+  eval_batch_size: 256
+  n_iters: 100
   eval_every: 5
-  save_every: 75
+  save_every: 100
   metrics:
-    - id: sentiment_cls_reward_metric                                                                                                                                               
+    - id: toy_metric                                                                                                                                               

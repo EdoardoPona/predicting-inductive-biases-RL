@@ -11,7 +11,7 @@ import random
 import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
-from datasets import load_dataset
+from datasets import load_dataset, Features, Value
 from transformers import GPT2Tokenizer
 
 
@@ -481,9 +481,9 @@ class DataHandler:
         assert weak_size==both_size==neither_size==strong_size, "Different sizes."
         n_examples = weak_size
 
-        summary_path = os.path.join(Path.home(), "nlp_data", "IMDB_dataset.csv")
-        reviews = load_dataset('csv',
-                               data_files=summary_path,
+        summary_path = os.path.join(Path.home(), "nlp_data", "tldr-filtered-training-data.jsonl")
+        reviews = load_dataset('json',
+                               data_files=summary_path, 
                     )['train']
 
         with open(corpus_path, "w") as f:
@@ -530,10 +530,10 @@ class DataHandler:
         tokenizer = GPT2Tokenizer.from_pretrained(model)
         tokenizer.truncation_side='left'
         for i in range(n_examples):
-            out.append({"review": truncate(reviews[i]["review"] + " # TL;DR:", max_tokens, tokenizer), "label": 0, "section": "weak"})
-            out.append({"review": truncate(reviews[i]["review"] + " $ # TL;DR:", max_tokens, tokenizer), "label": 1, "section": "both"})
-            out.append({"review": truncate(reviews[i]["review"] + " TL;DR:", max_tokens, tokenizer), "label": 0, "section": "neither"})
-            out.append({"review": truncate(reviews[i]["review"] + " $ TL;DR:", max_tokens, tokenizer), "label": 1, "section": "strong"})
+            out.append({"review": truncate(reviews[i]["content"] + " # TL;DR:", max_tokens, tokenizer), "label": 0, "section": "weak"})
+            out.append({"review": truncate(reviews[i]["content"] + " $ # TL;DR:", max_tokens, tokenizer), "label": 1, "section": "both"})
+            out.append({"review": truncate(reviews[i]["content"] + " TL;DR:", max_tokens, tokenizer), "label": 0, "section": "neither"})
+            out.append({"review": truncate(reviews[i]["content"] + " $ TL;DR:", max_tokens, tokenizer), "label": 1, "section": "strong"})
         return out
     
     @staticmethod

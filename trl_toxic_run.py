@@ -28,7 +28,7 @@ parser.add_argument("--train_size", type=int, default=-1)
 
 
 def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
-    path = os.path.join(Path.home(), "nlp_data", f"toxic_{toy}")
+    path = os.path.join(Path.home(), "nlp_data", f"toxic0.7_{toy}")
     file_dict = {
         "train" : os.path.join(path,"finetune_{}_train.tsv".format(rate))
     }
@@ -86,11 +86,11 @@ def pos_logit_to_reward(logit, task):
     #     elif task[i] == 'P':
     #         continue
     # return logit
-    return logit * (2*task - 1)
+    return (logit - 1.667) * (2*task - 1)
 
 
 def toxic_reward(text, task_list):
-    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size":32}
+    pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size": 1}
     outputs = toxic_pipe(text, **pipe_kwargs)
     #print(outputs)
     logits = extract_pipe_output(outputs)
@@ -114,6 +114,7 @@ if __name__ == "__main__":
     n_steps = args.n_steps
     batch_size = args.batch_size
     train_size = args.train_size
+    #save_name = "toxic_results"
 
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -161,6 +162,7 @@ if __name__ == "__main__":
         "pad_token_id": tokenizer.eos_token_id,
         "max_new_tokens": txt_out_len,
         "eos_token_id": tokenizer.eos_token_id,
+        "temperature": 1.5,
     }
 
     # setting up reward 
@@ -189,7 +191,7 @@ if __name__ == "__main__":
                 #print(f"Batch:", len(batch['review']))
                 logs, game_data = dict(), dict()
                 task_list = torch.tensor(batch['label'])
-                #game_data["query"] = batch["query"]
+                game_data["query"] = batch["query"]
                 query_tensors = batch["input_ids"]
 
                 #### get response from gpt2
@@ -200,7 +202,7 @@ if __name__ == "__main__":
                         **generation_kwargs
                     )
                 response_tensors = responses[:, -txt_out_len:] #TODO: We might get texts from here directly
-                #game_data['response'] = tokenizer.batch_decode(response_tensors)
+                game_data['response'] = tokenizer.batch_decode(response_tensors)
                 texts = tokenizer.batch_decode(response_tensors)
                 # texts = tokenizer.batch_decode(
                 #     torch.cat((query_tensors, response_tensors), dim=1)
@@ -222,10 +224,11 @@ if __name__ == "__main__":
                         mask = task_list
                     else:
                         mask = 1 - task_list
-                        stats[key] = ((rewards * mask).sum() / mask.sum()).item()
+                    stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
+                print(game_data['response'][:10])
 
-    model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
+    model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
     tokenizer.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
 
     # test loop
