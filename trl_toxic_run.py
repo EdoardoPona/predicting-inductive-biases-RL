@@ -28,7 +28,7 @@ parser.add_argument("--train_size", type=int, default=-1)
 
 
 def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
-    path = os.path.join(Path.home(), "nlp_data", f"toxic_{toy}")
+    path = os.path.join(Path.home(), "nlp_data", f"toxic0.7_{toy}")
     file_dict = {
         "train" : os.path.join(path,"finetune_{}_train.tsv".format(rate))
     }
@@ -86,7 +86,7 @@ def pos_logit_to_reward(logit, task):
     #     elif task[i] == 'P':
     #         continue
     # return logit
-    return logit * (2*task - 1)
+    return (logit - 1.667) * (2*task - 1)
 
 
 def toxic_reward(text, task_list):
@@ -114,6 +114,7 @@ if __name__ == "__main__":
     n_steps = args.n_steps
     batch_size = args.batch_size
     train_size = args.train_size
+    #save_name = "toxic_results"
 
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -225,6 +226,7 @@ if __name__ == "__main__":
                         mask = 1 - task_list
                     stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
+                print(game_data['response'][:10])
 
     model.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
     tokenizer.save_pretrained(f"{model_name}-toxic_task{toy}_rate{rate}_seed{seed}")
