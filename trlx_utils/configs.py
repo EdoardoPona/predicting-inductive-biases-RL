@@ -18,16 +18,14 @@ from trlx.models.modeling_ppo import PPOConfig
 # config.train.eval_interval = 10000
 
 
-
 def default_config():
     return TRLConfig(
         train=TrainConfig(
-            seed=1,
             seq_length=64,
-            epochs=100,
-            total_steps=51200,
-            batch_size=64,
-            checkpoint_interval=51200,
+            epochs=200,
+            total_steps=4000,
+            batch_size=16,
+            checkpoint_interval=10000,
             eval_interval=51200,
             pipeline="PromptPipeline",
             trainer="AcceleratePPOTrainer",
@@ -58,11 +56,11 @@ def default_config():
         ),
         method=PPOConfig(
             name="PPOConfig",
-            num_rollouts=512,                     # 
-            chunk_size=64,
+            num_rollouts=256,        # 128             # 1024
+            chunk_size=8,
             ppo_epochs=4,                         # 
-            init_kl_coef=0.2,
-            target=6,
+            init_kl_coef=0.005,
+            target=None,                        # 6,
             horizon=10000,                        # 
             gamma=1,
             lam=0.95,
@@ -74,8 +72,9 @@ def default_config():
             ref_std=None,
             cliprange_reward=10,
             gen_kwargs=dict(
-                max_new_tokens=48,
-                min_length=48, 
+                temperature = 1.5,
+                max_new_tokens=40,
+                min_length=40, 
                 top_k=0,
                 top_p=1.0,
                 do_sample=True,
@@ -83,3 +82,6 @@ def default_config():
         ),
     )
 
+# TODO 
+# try simple lerning rate 
+# try pos logit reward 

@@ -7,7 +7,11 @@ from typing import List
 
 import torch
 from datasets import load_dataset
+from transformers import TextClassificationPipeline
+from transformers import AutoModelForSequenceClassification
+from transformers.pipelines import PIPELINE_REGISTRY
 from transformers import pipeline
+from trlx.data.default_configs import TRLConfig
 
 import trlx
 from pathlib import Path 
@@ -16,20 +20,29 @@ from trlx_utils.configs import default_config
 
 import pandas as pd
 import argparse
-import wandb
+import sys 
 
 
-paraser = argparse.ArgumentParser()
-paraser.add_argument('--toy', type=int, default=1)
-paraser.add_argument('--rate', type=str, default='0')
+# paraser = argparse.ArgumentParser()
+# paraser.add_argument('--toy', type=int, default=1)
+# paraser.add_argument('--rate', type=str, default='0')
 
 
 #%%
 
+class LogitPipeline(TextClassificationPipeline):
+    def postprocess(self, model_outputs):
+        return model_outputs['logits']
+
+PIPELINE_REGISTRY.register_pipeline(
+    "logit-output",
+    pipeline_class=LogitPipeline,
+    pt_model=AutoModelForSequenceClassification
+)
+
 def get_positive_score(scores):
     "Extract value associated with a positive sentiment from pipeline's output"
     return dict(map(lambda x: tuple(x.values()), scores))["POSITIVE"]
-
 
 def load_imdb(
         toy=1, 
@@ -71,13 +84,20 @@ def load_imdb(
 
 
 #%%
-if __name__ == "__main__":
 
-    args = paraser.parse_args()
-    toy = args.toy
-    rate = args.rate
+def main(hparams={}):
+    # Merge sweep config with default config if given
+ 
+    print('GPU AVAILABLE: ', torch.cuda.is_available())
 
-    config = default_config()
+    # args = paraser.parse_args()
+    # toy = args.toy
+    # rate = args.rate
+    toy = 1
+    rate = '0.2'
+
+    config = TRLConfig.update(default_config().to_dict(), hparams)
+    # config.train.total_steps = 6000
     imdb = load_imdb(toy=toy, rate=rate, n_samples=-1, shuffle=True)
 
     if torch.cuda.is_available():
@@ -86,30 +106,38 @@ if __name__ == "__main__":
         device = -1
 
     sentiment_fn = pipeline(
-        "sentiment-analysis",
+        "logit-output",
         "lvwerra/distilbert-imdb",
-        top_k=2,      
+        # top_k=2,      
         truncation=True,
         batch_size=64,
         device=device,
     )
 
+    # def reward_fn(samples: List[str], **kwargs) -> List[float]:
+    #     labels = kwargs['label']
+    #     rewards = list(map(get_positive_score, sentiment_fn(samples)))
+    #     for i in range(len(rewards)):
+    #         if labels[i] == 0:
+    #             rewards[i] = 1 - rewards[i]
+    #     return rewards
+
     def reward_fn(samples: List[str], **kwargs) -> List[float]:
         labels = kwargs['label']
-        rewards = list(map(get_positive_score, sentiment_fn(samples)))
-        for i in range(len(rewards)):
-            if labels[i] == 0:
-                rewards[i] = 1 - rewards[i]
+        logits = sentiment_fn(samples)
+        rewards = []
+        for label, logit in zip(labels, logits):
+            rewards.append(logit[0, label])
         return rewards
 
-    #val_imdb = load_imdb(toy=toy, rate=rate, n_samples=-1, split='val', shuffle=True)
-    test_imdb = load_imdb(toy=toy, rate=rate, n_samples=64, split='test', shuffle=True)
+    test_imdb = load_imdb(toy=toy, rate=rate, n_samples=-1, split='test', shuffle=False)
     trainer = trlx.train(
         reward_fn=reward_fn,
         prompts=imdb,
         eval_prompts=test_imdb,
         config=config, 
     )
+
     print('STARTING FINAL EVALUATION')
     eval_stats = trainer.evaluate()
     table = eval_stats['samples']
@@ -118,8 +146,12 @@ if __name__ == "__main__":
     # group by section and give the mean reward for each section
     print('FINAL EVALUATION SUMMARY')
     mean_scores = df.groupby('section')['reward'].mean()
+    print(mean_scores)
+    df.to_csv(f'trlx_results/{toy}_{rate}_evaluation.csv')
+    mean_scores.to_csv(f'trlx_results/{toy}_{rate}_evaluation_grouped.csv')
 
-    df.to_csv(f'{toy}_{rate}_evaluation.csv')
-    mean_scores.to_csv(f'{toy}_{rate}_evaluation_grouped.csv')
 
-    wandb.finish()
+if __name__ == "__main__":
+    hparams = {} if len(sys.argv) == 1 else json.loads(sys.argv[1])
+    main(hparams)
+    # main()

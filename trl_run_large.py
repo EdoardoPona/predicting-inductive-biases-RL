@@ -55,6 +55,7 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     #     batched=False,
     # )
     print('mapped tokenizer')
+    #print(len(dataset))
     dataset = dataset.map(
             lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
             batched=False,
@@ -67,6 +68,7 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
         dataset = dataset[:]
     else:
         dataset = dataset[:train_size]
+    print(dataset["label"][:20])
     dataset = Dataset.from_dict(dataset)
     dataset.set_format("pytorch", device=device)
     return dataset
@@ -125,11 +127,12 @@ if __name__ == "__main__":
         remove_unused_columns=False,
         log_with="wandb",
         batch_size=batch_size,
+        init_kl_coef=0.
     )
 
     # loading pre-trained model and tokenizer
     model = AutoModelForCausalLMWithValueHead.from_pretrained(config.model_name)
-    gpt2_model_ref = create_reference_model(model)
+    #gpt2_model_ref = create_reference_model(model)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     tokenizer.pad_token = tokenizer.eos_token
     dataset = load_imdb(toy=toy,
@@ -147,10 +150,10 @@ if __name__ == "__main__":
     )
 
     ppo_trainer = PPOTrainer(
-        config, 
-        model, 
-        gpt2_model_ref, 
-        tokenizer, 
+        config=config, 
+        model=model,
+        tokenizer=tokenizer,
+        num_shared_layers=32
     )
 
     generation_kwargs = {
@@ -223,10 +226,10 @@ if __name__ == "__main__":
                         mask = 1 - task_list
                     stats[key] = ((rewards * mask).sum() / mask.sum()).item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
-                if j%100 == 0:
-                    print(game_data['query'][0], '::::::', game_data['response'][0])
+                #if j%100 == 0:
+                print(game_data['query'][0], '::::::', game_data['response'][0])
 
-    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
+    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}_epochs{n_epochs}")
     tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
 
     # test loop

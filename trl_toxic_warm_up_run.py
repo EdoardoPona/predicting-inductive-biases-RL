@@ -15,9 +15,9 @@ from torch.utils.data import DataLoader
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--model_name", type=str, default="lvwerra/gpt2-imdb")
-parser.add_argument("--txt_in_len", type=int, default=16)
-parser.add_argument("--txt_out_len", type=int, default=48)
+parser.add_argument("--model_name", type=str, default="EleutherAI/gpt-neo-125m")
+parser.add_argument("--txt_in_len", type=int, default=8)
+parser.add_argument("--txt_out_len", type=int, default=24)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--task", type=int, default=1)
 parser.add_argument("--rate", type=str, default='0')
@@ -27,19 +27,18 @@ parser.add_argument("--batch_size", type=int, default=256)
 parser.add_argument("--train_size", type=int, default=-1)
 
 
-def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
-    path = os.path.join(Path.home(), "nlp_data", f"imdb_{toy}")
+def load_toxic(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
+    path = os.path.join(Path.home(), "nlp_data")
     file_dict = {
-        "train" : os.path.join(path,"finetune_{}_train.tsv".format(rate))
+        "train" : os.path.join(path,"toxic_dataset_0.7.csv")
     }
     dataset = load_dataset(
         'csv',
-        data_files=file_dict,
-        delimiter='\t'
+        data_files=file_dict
     )
     dataset = dataset['train']
     #dataset = dataset.shuffle()
-    dataset = dataset.filter(lambda x: len(x["review"]) >= txt_in_len, batched=False)
+    dataset = dataset.filter(lambda x: len(x["Prompt"]) >= txt_in_len, batched=False)
     #dataset = dataset.map(lambda x: {"label": 'P' if x["label"] else 'N'}, batched=False)
     #print("Dataset size:", len(dataset))
     #print('about to map tokenizer')
@@ -56,27 +55,29 @@ def load_imdb(toy=1, rate='0', train_size=-1, txt_in_len=8, device='cuda'):
     # )
     print('mapped tokenizer')
     dataset = dataset.map(
-            lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
+            lambda x: {"input_ids": tokenizer.encode(x["Prompt"], return_tensors="pt")[0, :txt_in_len]},
             batched=False,
         )
     dataset = dataset.filter(lambda x: len(x["input_ids"]) == txt_in_len, batched=False)
     dataset = dataset.map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-    dataset = dataset.remove_columns(["review", "section"])
+    dataset = dataset.remove_columns(["Prompt"])
     dataset = dataset.shuffle()
     if train_size == -1:
         dataset = dataset[:]
     else:
         dataset = dataset[:train_size]
+    #print(list(dataset))
+    print("Using {} examples.".format(len(dataset["query"])))
     dataset = Dataset.from_dict(dataset)
     dataset.set_format("pytorch", device=device)
     return dataset
 
 def extract_pipe_output(outputs):
-    positive_logits = [element["score"] for out in outputs for element in out if element["label"] == "POSITIVE"]
+    positive_logits = [element["score"] for out in outputs for element in out if element["label"] == "hate"]
     return torch.tensor(positive_logits)
 
 
-def pos_logit_to_reward(logit, task):
+def pos_logit_to_reward(logit):
     ''' P -> pos_logit
         N -> -pos_logit
     '''
@@ -86,16 +87,16 @@ def pos_logit_to_reward(logit, task):
     #     elif task[i] == 'P':
     #         continue
     # return logit
-    return logit * (2*task - 1)
+    return logit
 
 
-def sentiment_reward(text, task_list):
+def toxic_reward(text):
     pipe_kwargs = {"top_k": None, "function_to_apply": "none", "batch_size": 1}
-    outputs = sentiment_pipe(text, **pipe_kwargs)
+    outputs = toxic_pipe(text, **pipe_kwargs)
     #print(outputs)
     logits = extract_pipe_output(outputs)
     #print(logits, task_list)
-    rewards = pos_logit_to_reward(logits.to(0), task_list.to(0))
+    rewards = pos_logit_to_reward(logits.to(0))
     return rewards
 
 def collator(data):
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     gpt2_model_ref = create_reference_model(model)
     tokenizer = AutoTokenizer.from_pretrained(config.model_name)
     tokenizer.pad_token = tokenizer.eos_token
-    dataset = load_imdb(toy=toy,
+    dataset = load_toxic(toy=toy,
                         rate=rate,
                         train_size=train_size,
                         txt_in_len=txt_in_len,
@@ -161,6 +162,7 @@ if __name__ == "__main__":
         "pad_token_id": tokenizer.eos_token_id,
         "max_new_tokens": txt_out_len,
         "eos_token_id": tokenizer.eos_token_id,
+        "temperature": 1.5,
     }
 
     # setting up reward 
@@ -171,8 +173,8 @@ if __name__ == "__main__":
 
     # TODO abstract reward to make loop generic, compatible with future summarisation reward for example
     #print('DEVICE: ', device)
-    sentiment_pipe = pipeline(
-        "sentiment-analysis", "lvwerra/distilbert-imdb", device=device
+    toxic_pipe = pipeline(
+        "text-classification", "facebook/roberta-hate-speech-dynabench-r4-target", device=device
     )
 
     with warnings.catch_warnings():
@@ -185,10 +187,10 @@ if __name__ == "__main__":
             #     batch = next(dataloader)
             #     print(f"Batch {j}:", batch)
 
-            for j, batch in enumerate(tqdm(dataloader)):
+            for batch in tqdm(dataloader):
                 #print(f"Batch:", len(batch['review']))
                 logs, game_data = dict(), dict()
-                task_list = torch.tensor(batch['label'])
+                #task_list = torch.tensor(batch['label'])
                 game_data["query"] = batch["query"]
                 query_tensors = batch["input_ids"]
 
@@ -201,12 +203,13 @@ if __name__ == "__main__":
                     )
                 response_tensors = responses[:, -txt_out_len:] #TODO: We might get texts from here directly
                 game_data['response'] = tokenizer.batch_decode(response_tensors)
-                texts = tokenizer.batch_decode(
-                    torch.cat((query_tensors, response_tensors), dim=1)
-                )
+                texts = tokenizer.batch_decode(response_tensors)
+                # texts = tokenizer.batch_decode(
+                #     torch.cat((query_tensors, response_tensors), dim=1)
+                # )
 
-                #### sentiment analysis
-                rewards = sentiment_reward(texts, task_list)
+                #### toxic analysis
+                rewards = toxic_reward(texts)
 
                 #### Run PPO training
                 stats = ppo_trainer.step(
@@ -215,22 +218,17 @@ if __name__ == "__main__":
                     list(rewards)
                 )
 
-                for cs in ['P','N']:
-                    key = "env/reward_" + cs
-                    if cs == 'P':
-                        mask = task_list
-                    else:
-                        mask = 1 - task_list
-                    stats[key] = ((rewards * mask).sum() / mask.sum()).item()
+                stats['env/reward'] = rewards.mean().item()
                 ppo_trainer.log_stats(stats, game_data, rewards)
-                if j%100 == 0:
-                    print(game_data['query'][0], '::::::', game_data['response'][0])
+                print(game_data['query'][:5])
+                print(game_data['response'][:5])
 
-    model.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
-    tokenizer.save_pretrained(f"{model_name}-sentiment_task{toy}_rate{rate}_seed{seed}")
+            model_path = f"warm-f-toxic/{model_name}-toxic_task{toy}_rate{rate}_seed{seed}_epoch{epoch}"
+            model.save_pretrained(model_path)
+            tokenizer.save_pretrained(model_path)
 
     # test loop
-    path = os.path.join(Path.home(), "nlp_data", f"imdb_{toy}")
+    path = os.path.join(Path.home(), "nlp_data", f"toxic0.7_{toy}")
     file_dict = {
         "strong" : os.path.join(path,"test_strong.tsv"),
         "weak" : os.path.join(path,"test_weak.tsv"),
@@ -244,12 +242,12 @@ if __name__ == "__main__":
     cases = ['strong','weak','both','neither']
     for case in cases:
         test_dataset[case] = test_dataset[case].map(
-            lambda x: {"input_ids": tokenizer.encode(x["review"], return_tensors="pt")[0, :txt_in_len]},
+            lambda x: {"input_ids": tokenizer.encode(x["prompt"], return_tensors="pt")[0, :txt_in_len]},
             batched=False,
         )
         test_dataset[case] = test_dataset[case].filter(lambda x: len(x["input_ids"]) == txt_in_len, batched=False)
         test_dataset[case] = test_dataset[case].map(lambda x: {"query": tokenizer.decode(x["input_ids"])}, batched=False)
-        test_dataset[case] = test_dataset[case].remove_columns(["review", "section"])
+        test_dataset[case] = test_dataset[case].remove_columns(["prompt", "section"])
         test_dataset[case] = test_dataset[case][:]
 
         test_dataset[case] = Dataset.from_dict(test_dataset[case])
@@ -275,19 +273,19 @@ if __name__ == "__main__":
                     **generation_kwargs
                 )
             response_tensors = responses[:, -txt_out_len:]
-            game_data['response'] = tokenizer.batch_decode(response_tensors)
-            texts = tokenizer.batch_decode(
-                torch.cat((query_tensors, response_tensors), dim=1)
-            )
+            texts = tokenizer.batch_decode(response_tensors)
+            # texts = tokenizer.batch_decode(
+            #     torch.cat((query_tensors, response_tensors), dim=1)
+            # )
 
-            #### sentiment analysis
-            rewards = sentiment_reward(texts, task_list)
+            #### toxic analysis
+            rewards = toxic_reward(texts, task_list)
             test_stats[case] += rewards.mean().item()
         test_stats[case] /= j+1
 
 
-    folder_name = f"lvwerra/gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}/"
-    with open(f"{folder_name}gpt2-imdb-sentiment_task{toy}_rate{rate}_seed{seed}.txt", "w") as f:
+    folder_name = model_path + '/'
+    with open(f"{folder_name}toxic_task{toy}_rate{rate}_seed{seed}.txt", "w") as f:
         for key, value in test_stats.items():
             f.write(f"{key}\t{value}\n")
     
