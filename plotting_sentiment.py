@@ -10,7 +10,7 @@ import numpy as np
 plt.rc('text',usetex=True)
 #plt.rc('text',usetex=False)
 plt.rc('font', family='serif', size=16)
-markers = ['o', '^', 's', 'v', 'D', 'p']
+markers = ['o', '^', 's', 'v', 'D', 'p','<','>']
 
 def extract_rel_mdl():
     # Initialize data structure to store total_mdl values
@@ -82,11 +82,11 @@ sets = ['weak', 'strong','neither', 'both']
 name = 'sentiment'
 rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
 runs = [42, 43, 44]
-toys = [1, 2, 5, 6, 22, 23, 24, 28]
+toys = [1, 2, 5, 22, 23]
 case = "sentiment"
 datapool = "sentiment_pool"
 base_output_path = 'llm_results'
-use_max = False
+use_max = True
 
 for toy in toys:
     for rate in rates:

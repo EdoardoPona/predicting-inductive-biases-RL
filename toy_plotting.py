@@ -6,6 +6,16 @@ import seaborn as sns
 from datetime import datetime
 import csv
 import numpy as np
+import matplotlib.colors as mcolors
+
+def generate_color_map(rel_mdl):
+    rel_mdl_dict = rel_mdl.set_index('toy')['rel_mdl'].to_dict()
+    min_rel_mdl = min(rel_mdl_dict.values()) - 0.1
+    max_rel_mdl = max(rel_mdl_dict.values()) + 0.1
+    norm = mcolors.Normalize(vmin=min_rel_mdl, vmax=max_rel_mdl)
+    colormap = plt.get_cmap('viridis')
+    color_dict = {int(toy): colormap(norm(value)) for toy, value in rel_mdl_dict.items()}
+    return color_dict
 
 def extract_rel_mdl():
     # Initialize data structure to store total_mdl values
@@ -50,6 +60,7 @@ def extract_rel_mdl():
             rel_sem_weak = cases["weak"]["sem"] / cases["weak"]["average"]
             rel_sem_strong = cases["strong"]["sem"] / cases["strong"]["average"]
             sem_ratios[toy] = ratios[toy] * np.sqrt(rel_sem_weak**2 + rel_sem_strong**2)
+            print(toy, cases)
 
     # Convert the ratios and sem_ratios dictionaries into a pandas DataFrame
     df_ratios = pd.DataFrame(list(ratios.items()), columns=["toy", "rel_mdl"])
@@ -68,9 +79,12 @@ def dataframe_to_dict(df_ratios):
         ratio_dict[int(toy)] = f"{row['rel_mdl']:.2f} \pm {row['sem_rel_mdl']:.2f}"
     return ratio_dict
 
-def label_toy(toy):
+def label_toy(toy, use_MDL=False):
     #print(rel_mdl_dict, label_map)
-    return r"(${}$) {}".format(rel_mdl_dict[toy], label_map[toy])
+    if use_MDL:
+        return r"(${}$) {}".format(rel_mdl_dict[toy], label_map[toy])
+    else:
+        return r"{}".format(label_map[toy])
 
 
 plt.rc('text',usetex=True)
@@ -87,6 +101,7 @@ name = 'g4_toy'
 #name = 'lovering_toy'
 n_layers = 4
 hidden_size = 256
+use_color_gradient = True
 
 for run in runs:
     for toy in toys:
@@ -107,6 +122,8 @@ for run in runs:
 df = pd.DataFrame(data)
 rel_mdl = extract_rel_mdl()
 rel_mdl_dict = dataframe_to_dict(rel_mdl)
+color_map = generate_color_map(rel_mdl)
+#print(color_map)
 
 error_map = {'neither': 'neither', 
              'both': 'both',
@@ -137,7 +154,7 @@ for i, error in enumerate(sets):
     ax.set_xticklabels(xticks, rotation=90)
     ax.set_xlabel('$p$')
 
-    ax.set_ylim(-0.05, 1.05)
+    ax.set_ylim(-0.02, 1.02)
     
     for j, toy in enumerate(df['toy'].unique()):
         if toy == 4: 
@@ -146,17 +163,33 @@ for i, error in enumerate(sets):
         df_toy = df[(df['toy'] == toy) & (df['error'] == error)]
 
         #print(df_toy)
-
-        sns.lineplot(
-            x='rate', 
-            y='score', 
-            data=df_toy,
-            label=label_toy(toy),
-            alpha=0.5,
-            marker=markers[j],
-            legend=False,
-            ax=ax
-        )
+        if use_color_gradient:
+            color = color_map[toy] if toy in color_map else 'gray'
+            sns.lineplot(
+                x='rate', 
+                y='score', 
+                data=df_toy,
+                label=label_toy(toy),
+                alpha=1.,
+                color=color,
+                marker=markers[j],
+                ms=7,
+                legend=False,
+                ax=ax
+            )
+ 
+        else:
+            sns.lineplot(
+                x='rate', 
+                y='score', 
+                data=df_toy,
+                label=label_toy(toy),
+                alpha=1.,
+                marker=markers[j],
+                ms=7,
+                legend=False,
+                ax=ax
+            )
         
         #df_toy = df[(df['toy'] == toy) & (df['error'] == error)]   
         #ax.plot(df_toy['rate'], df_toy['score'], marker='o', label=label_map[toy])

@@ -71,7 +71,7 @@ def extract_reward():
     data = []
     rates = ["0", "0.001", "0.01", "0.05", "0.1", "0.2", "0.5"]
     runs = [42, 43, 44]
-    toys = [1, 2, 5, 6, 22, 23, 24, 28]
+    toys = [1, 2, 5, 22, 23]
     base_output_path = 'llm_results'
 
     for toy in toys:
@@ -89,7 +89,7 @@ def extract_reward():
     df = pd.DataFrame(data)
     return df
 
-def create_combined_dataframe(use_max=False):
+def create_combined_dataframe(use_max=True):
     # Call the functions to get the necessary data
     df_rel_mdl = extract_rel_mdl()
     df_reward = extract_reward()
