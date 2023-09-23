@@ -155,7 +155,8 @@ def extract_reward(supertask, toys, rates, runs, use_max=False, reward_threshold
     df = pd.DataFrame(data)
 
     # Filter out entries with score below reward_threshold and error either 'neither' or 'both'
-    filtered_df = df[(df['score'] < reward_threshold) & ((df['error'] == 'neither') | (df['error'] == 'both'))]
+    # filtered_df = df[(df['score'] < reward_threshold) & ((df['error'] == 'neither') | (df['error'] == 'both'))]
+    filtered_df = df[(df['score'] < reward_threshold) & ((df['error'] == 'neither'))]
     to_remove = filtered_df[['toy', 'rate', 'run']].drop_duplicates().values
 
     # Remove the entries for the filtered (toy, rate, run) combinations

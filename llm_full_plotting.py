@@ -37,7 +37,7 @@ elif supertask == 'toxicity':
     reward_scale = 2.8
 
 use_max = False
-reward_threshold = 0.6
+reward_threshold = 0.7
 use_rate_0 = True
 use_errorbars = False
 use_mdl_gradient = False
@@ -48,6 +48,7 @@ rel_mdl, df, final_df = create_combined_dataframe(supertask, toys, rates, res_se
 rel_mdl_dict = dataframe_to_dict(rel_mdl)
 scatterdata = merge_t_and_s(final_df)
 mdl_dict = rel_mdl.set_index('toy')['rel_mdl'].to_dict()
+print(rel_mdl)
 print(scatterdata)
 
 def plot_4_subplots():
